@@ -18,7 +18,7 @@ export const CartSidebar = () => {
     }
   }, [isCartOpen]);
 
-  const obtenerRecomendaciones = () => {
+  const obtenerRecommendations = () => {
     if (carrito.length === 0 || !productosReales || productosReales.length === 0) return [];
     const ultimoItem = carrito[carrito.length - 1];
     const infoProductoReal = productosReales.find(p => p.id && ultimoItem.id && p.id.toString() === ultimoItem.id.toString());
@@ -63,7 +63,7 @@ export const CartSidebar = () => {
       .slice(0, 3);
   };
 
-  const recomendaciones = obtenerRecomendaciones();
+  const recomendaciones = obtenerRecommendations();
 
   const handleCalcularEnvio = async () => {
     if (!cpInput.trim()) return;
@@ -84,16 +84,15 @@ export const CartSidebar = () => {
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
 
-    // Usamos el dominio alternativo para evitar problemas de resolución en tu red local
+    // Mandamos la consulta al dominio de Tiendanube para que procese correctamente la mutación del carro
     const URL_BASE_TIENDA = "https://aspenclothing.mitiendanube.com";
     
     // Mapeamos de forma dinámica los variantId y cantidades de tu estado de React
-    // Estructura aceptada por Tiendanube: variants=id_variante_1:cantidad_1,id_variante_2:cantidad_2
     const queryProductos = carrito
       .map(item => `${item.variantId}:${item.cantidad}`)
       .join(',');
 
-    // Redirección directa por navegador saltando el bloqueo de CORS del fetch asíncrono
+    // Redirección directa mandando los productos al motor de checkout de Tiendanube
     const urlCheckoutDirecto = `${URL_BASE_TIENDA}/cart/add/?variants=${queryProductos}&next=checkout`;
     window.location.href = urlCheckoutDirecto;
   };
@@ -204,9 +203,7 @@ export const CartSidebar = () => {
                   </div>
                   <div className="cp-input-grupo">
                     <input type="text" placeholder="Tu código postal" className="cart-cp-input" value={cpInput} onChange={(e) => setCpInput(e.target.value)} disabled={cargandoEnvio} />
-                    <button className="cart-cp-btn" onClick={handleCalcularEnvio} disabled={cargandoEnvio}>
-                      {cargandoEnvio ? "..." : "CALCULAR"}
-                    </button>
+                    <input type="button" className="cart-cp-btn" onClick={handleCalcularEnvio} disabled={cargandoEnvio} value={cargandoEnvio ? "..." : "CALCULAR"} />
                   </div>
 
                   {cargandoEnvio && <div className="camion-ruta-contenedor"><div className="camion-icono">🚚💨</div></div>}
