@@ -88,8 +88,8 @@ export const CartSidebar = () => {
       .map(item => `${item.variantId}:${item.cantidad}`)
       .join(',');
 
-    // Usamos el dominio nativo seguro de Tiendanube para el proceso de checkout directo, rompiendo cualquier redirección vieja
-    window.location.href = `https://aspenclothing.mitiendanube.com/checkout/start/?variants=${queryProductos}`;
+    // Usamos el endpoint oficial de Tiendanube /cart/add/ pero directo sobre el subdominio desnudo
+    window.location.href = `https://aspenclothing.mitiendanube.com/cart/add/?variants=${queryProductos}&next=checkout`;
   };
 
   const handleRestarCantidad = (item: any) => {
