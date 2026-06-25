@@ -84,13 +84,12 @@ export const CartSidebar = () => {
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
     
-    // Alerta de diagnóstico para verificar si el navegador ejecuta el código actual
-    alert("¡ENTRANDO A LA FUNCIÓN NUEVA!");
-
+    // Mapeamos dinámicamente las variantes y cantidades elegidas
     const queryProductos = carrito
       .map(item => `${item.variantId}:${item.cantidad}`)
       .join(',');
 
+    // Redirección directa al subdominio nativo sin intermediarios
     window.location.href = `https://aspenclothing.mitiendanube.com/cart/add/?variants=${queryProductos}&next=checkout`;
   };
 
