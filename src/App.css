@@ -1,0 +1,912 @@
+/* --- SECCIÓN DE DETALLE DE PRODUCTO GIGANTE (ESTILO CONTINUO STICKY) --- */
+
+.detalle-wrapper {
+  display: grid;
+  /* 🛠️ FIJADO: 55vw estricto para las fotos, y la columna derecha (1fr) se expande hasta el borde real de la pantalla */
+  grid-template-columns: 55vw 1fr;
+  gap: 60px;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0;
+  padding: 40px 60px 40px 0px; /* Agregamos espacio al borde derecho de la pantalla */
+  box-sizing: border-box;
+  align-items: start;
+}
+
+/* Contenedor vertical para que las fotos se listen hacia abajo limpiamente */
+.detalle-foto-seccion-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Contenedor fluido sin límites rígidos de alto que deformen las prendas */
+.foto-principal-contenedor-scroll {
+  width: 100%;
+  overflow: hidden;
+  background-color: transparent !important;
+}
+
+/* Imagen gigante fluida que ocupa el 100% de su ancho nativo */
+.foto-detalle-img-scroll {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+  object-fit: contain !important;
+}
+
+/* 🛠️ CORREGIDO STICKY: Bloque de información estirado al 100% del ancho disponible */
+.detalle-info-seccion {
+  position: sticky !important;
+  top: 120px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+  
+  /* 🔒 ELIMINAMOS RESTRICCIONES: Ocupa todo desde la foto hasta el final de la página */
+  width: 100% !important;
+  max-width: 100% !important; 
+  padding-right: 20px; /* Un pequeño aire antes del borde de la ventana */
+  box-sizing: border-box;
+}
+
+/* Ocultar barra de scroll interna */
+.detalle-info-seccion::-webkit-scrollbar {
+  width: 0px;
+}
+
+/* 🛠️ MEJORADO: El título de la prenda ahora se expande de punta a punta */
+.detalle-titulo {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0 0 15px 0;
+  line-height: 1.2;
+  width: 100% !important;
+}
+
+.detalle-precio {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  margin: 0 0 30px 0;
+}
+
+.detalle-bloque-talles {
+  width: 100% !important;
+  margin-bottom: 25px;
+}
+
+.talle-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+}
+
+.talle-label span {
+  font-weight: 700;
+}
+
+/* 🛠️ MEJORADO: La grilla de botones de talle se abre por completo en el nuevo ancho */
+.grilla-botones-talle {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Divide los 4 talles en columnas iguales ocupando todo el ancho */
+  gap: 12px;
+  width: 100% !important;
+  margin-top: 10px;
+}
+
+.btn-talle-cuadrado {
+  height: 45px;
+  border: 1px solid #e5e5e5;
+  background-color: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-talle-cuadrado:hover {
+  border-color: #000000;
+}
+
+.btn-talle-cuadrado.activo {
+  background-color: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+
+.btn-talle-cuadrado.sin-stock {
+  opacity: 0.3;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* 🛠️ MEJORADO: Fila de acciones (Selector + Botón) estirada al ras de la página */
+.detalle-bloque-accion {
+  display: flex;
+  gap: 15px;
+  width: 100% !important;
+  margin-top: 30px;
+  align-items: center;
+}
+
+/* El selector de cantidad se mantiene firme en su tamaño */
+.selector-cantidad-caja {
+  display: flex;
+  align-items: center;
+  border: 1px solid #000000;
+  height: 48px;
+  width: 120px;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.selector-cantidad-caja button {
+  background: none;
+  border: none;
+  width: 35px;
+  height: 100%;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.selector-cantidad-caja span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 🛠️ FIJADO: El botón de agregar al carrito ahora empuja y se estira hasta el borde final derecho */
+.btn-agregar-full {
+  flex: 1 !important; /* Toma absolutamente todo el espacio restante de la pantalla */
+  height: 48px;
+  background-color: #000000;
+  color: #ffffff;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.2s ease;
+}
+
+.btn-agregar-full:hover {
+  background-color: #222222;
+}
+
+.btn-agregar-full.sin-stock-bloqueado {
+  background-color: #e5e5e5;
+  color: #999999;
+  cursor: not-allowed;
+}
+
+/* Alertas y descripciones al 100% */
+.alertas-compra-contenedor,
+.detalle-descripcion-texto {
+  width: 100% !important;
+  margin-top: 20px;
+}
+
+.detalle-stock {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.punto-rojo {
+  width: 6px;
+  height: 6px;
+  background-color: #ff0000;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.punto-verde {
+  width: 6px;
+  height: 6px;
+  background-color: #00ff00;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.detalle-descripcion-texto div {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #333333;
+}
+
+.detalle-descripcion-texto ul {
+  padding-left: 18px;
+  margin: 10px 0;
+}
+
+.detalle-descripcion-texto li {
+  margin-bottom: 6px;
+}
+
+
+/* ==========================================================================
+   DISPOSICIÓN VERTICAL DE INSTAGRAM (LOGUITO CHICO ARRIBA)
+   ========================================================================== */
+
+.main-footer-black .footer-col.icon-col {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+}
+
+.main-footer-black .ig-link-vertical {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: opacity 0.3s ease;
+}
+
+.main-footer-black .logo-instagram-nuevo {
+  width: 24px !important;
+  height: 24px !important;
+  max-width: 24px !important;
+  max-height: 24px !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+.main-footer-black .ig-texto {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 1.5px !important;
+  text-align: center !important;
+  display: block !important;
+}
+
+.main-footer-black .ig-link-vertical:hover {
+  opacity: 0.7;
+}
+
+
+/* ==========================================================================
+   🔄 EFECTO HOVER PERMANENTE Y ULTRA FLUIDO (PORTADA)
+   ========================================================================== */
+
+.tarjeta-destacada {
+  display: flex !important;
+  flex-direction: column !important;
+  text-decoration: none !important;
+  color: #000000 !important;
+  overflow: hidden !important;
+  gap: 10px !important;
+}
+
+.contenedor-foto-destacada {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 4 / 5 !important; 
+  overflow: hidden !important;
+  background-color: #f0f0f0 !important;
+}
+
+.contenedor-foto-destacada .foto-prenda {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important; 
+  object-position: center center !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out !important;
+}
+
+/* 🔒 BLINDAJE ABSOLUTO DE CAPAS INTERNAS */
+.foto-frente {
+  opacity: 1 !important;
+  z-index: 2 !important;
+}
+
+.foto-espalda {
+  opacity: 0 !important;
+  z-index: 1 !important;
+}
+
+/* Comportamiento al pasar la flecha por encima */
+.tarjeta-destacada:hover .foto-frente {
+  opacity: 0 !important;
+  transform: scale(1.02) !important;
+}
+
+.tarjeta-destacada:hover .foto-espalda {
+  opacity: 1 !important;
+  transform: scale(1.02) !important;
+}
+
+/* Forzar visualización y espaciado de nombres abajo de la foto */
+.tarjeta-destacada h3, 
+.tarjeta-destacada p,
+.info-prenda-detalles {
+  color: #000000 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-family: inherit !important;
+  margin: 5px 0 0 0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.5px !important;
+  font-size: 13px !important;
+  text-align: center !important;
+}
+
+.selector-cantidad-caja button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   ALERTAS URBANAS DE CARRITO Y PESTAÑA EMERGENTE SUPERIOR
+   ========================================================================== */
+
+.alertas-compra-contenedor {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mensaje-ya-agregado {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #333333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: fadeInSutil 0.3s ease-in-out;
+}
+
+.tilde-verificado {
+  color: #000000;
+  font-weight: 700;
+}
+
+.btn-texto-open-cart {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: #000000;
+  text-decoration: underline;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: opacity 0.2s ease;
+}
+
+.btn-texto-open-cart:hover {
+  opacity: 0.6;
+}
+
+.popup-notificacion-superior {
+  position: fixed;
+  top: 95px; 
+  right: 40px;
+  width: 340px;
+  background-color: #ffffff;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  z-index: 999999; 
+  animation: slideInDerecha 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-cerrar-popup {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999999;
+  line-height: 1;
+}
+
+.btn-cerrar-popup:hover {
+  color: #000000;
+}
+
+.popup-cuerpo {
+  display: flex;
+  gap: 14px;
+  align-items: start;
+}
+
+.popup-foto-caja {
+  width: 70px;
+  height: 90px;
+  background-color: #f7f7f7;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+
+/* ==========================================================================
+   BLINDAJE TOTAL: MAQUETADO HERMÉTICO DEL SIDEBAR ESTILO TIENDANUBE
+   ========================================================================== */
+
+.cart-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  z-index: 99999999 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+
+.cart-sidebar {
+  width: 440px !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  background-color: #cccccc !important; 
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: -5px 0 30px rgba(0, 0, 0, 0.2) !important;
+  animation: slideInSidebar 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.cart-header {
+  padding: 24px !important;
+  border-bottom: 1px solid #000000 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background-color: transparent !important;
+}
+
+.cart-header h2 {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.5px !important;
+  margin: 0 !important;
+  color: #000000 !important;
+  text-transform: uppercase !important;
+}
+
+.cerrar-cart {
+  background: none !important;
+  border: none !important;
+  font-size: 22px !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  padding: 0 !important;
+}
+
+.cart-items-container {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+  background-color: transparent !important;
+}
+
+.cart-vacio {
+  font-size: 13px !important;
+  color: #666666 !important;
+  text-align: center !important;
+  margin-top: 40px !important;
+}
+
+.cart-lista-prendas {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.cart-item-nuevo {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding-bottom: 20px !important;
+  border-bottom: 1px solid #000000 !important;
+  background-color: transparent !important; 
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.cart-sidebar .cart-contenedor-foto-fija {
+  width: 60px !important;
+  height: 80px !important;
+  min-width: 60px !important;
+  min-height: 80px !important;
+  max-width: 60px !important;
+  max-height: 80px !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+  background-color: transparent !important;
+}
+
+.cart-item-detalles-nuevos {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.cart-item-fila-superior {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+}
+
+.cart-item-nombre-nuevo {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  color: #000000 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1.4 !important;
+}
+
+.btn-borrar-item-nuevo {
+  background: none !important;
+  border: none !important;
+  font-size: 11px !important;
+  color: #333333 !important;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+}
+
+.btn-borrar-item-nuevo:hover {
+  color: #000000 !important;
+}
+
+.cart-item-acciones-precio {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.cart-sidebar .mini-contador {
+  display: flex !important;
+  align-items: center !important;
+  border: 1px solid #000000 !important; 
+  height: 28px !important;
+  width: 80px !important;
+  justify-content: space-between !important;
+  background-color: transparent !important;
+}
+
+.cart-sidebar .mini-contador button {
+  background: none !important;
+  border: none !important;
+  width: 24px !important;
+  height: 100% !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  color: #000000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+.cart-sidebar .mini-contador span {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
+}
+
+.cart-item-precio-nuevo {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  color: #000000 !important;
+  letter-spacing: 0.5px !important;
+}
+
+
+/* ==========================================================================
+   MAQUETADO DE LA SECCIÓN URBANA COMPLEMENTARIA (CROSS SELLING)
+   ========================================================================== */
+
+.cart-cross-selling-seccion {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  margin: 10px 0 !important;
+}
+
+.cross-selling-titulo {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.5px !important;
+  color: #000000 !important;
+  margin: 0 !important;
+  text-transform: uppercase !important;
+}
+
+.cross-selling-lista {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.cross-selling-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px dashed #000000 !important; 
+}
+
+.cross-selling-foto {
+  width: 50px !important;
+  height: 65px !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+}
+
+.cross-selling-info {
+  flex: 1 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.cross-selling-nombre {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #111111 !important;
+  margin: 0 !important;
+  text-transform: uppercase !important;
+  max-width: 150px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.cross-selling-precio {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  margin: 0 !important;
+}
+
+.btn-cross-agregar {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  padding: 6px 12px !important;
+  letter-spacing: 1px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.btn-cross-agregar:hover {
+  background-color: #222222 !important;
+}
+
+
+/* ==========================================================================
+   RESUMEN DE COSTOS, CP Y FOOTER
+   ========================================================================== */
+
+.cart-resumen-valores {
+  border-top: 1px solid #000000 !important;
+  padding-top: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.cart-fila-valores {
+  display: flex !important;
+  justify-content: space-between !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
+  letter-spacing: 0.5px !important;
+}
+
+.cart-fila-valores small {
+  font-size: 10px !important;
+  color: #111111 !important;
+  font-weight: 400 !important;
+}
+
+.cart-bloque-codigo-postal {
+  border-top: 1px solid #000000 !important;
+  border-bottom: 1px solid #000000 !important;
+  padding: 16px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.cp-titulo {
+  display: flex !important;
+  justify-content: space-between !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  letter-spacing: 0.5px !important;
+}
+
+.cp-input-grupo {
+  display: flex !important;
+  width: 100% !important;
+  height: 40px !important;
+}
+
+.cart-cp-input {
+  flex: 1 !important;
+  border: 1px solid #000000 !important; 
+  border-right: none !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+}
+
+.cart-cp-btn {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 0 20px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+  cursor: pointer;
+}
+
+.cp-ayuda {
+  font-size: 10px !important;
+  text-decoration: underline !important;
+  color: #111111 !important;
+  cursor: pointer !important;
+  letter-spacing: 0.5px !important;
+}
+
+.camion-ruta-contenedor {
+  width: 100% !important;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 12px !important;
+  overflow: hidden !important;
+  margin-top: 4px !important;
+  box-sizing: border-box !important;
+}
+
+.camion-icono {
+  font-size: 16px !important;
+  display: inline-block !important;
+  animation: moverCamion 2.5s linear infinite !important;
+}
+
+.envio-resultados-animados {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  background-color: transparent !important;
+  padding: 12px !important;
+  border-top: 1px dashed #000000 !important;
+  border-bottom: 1px dashed #000000 !important;
+  margin-top: 4px !important;
+  animation: fadeInSutil 0.3s ease !important;
+}
+
+.opcion-envio-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  font-size: 11px !important;
+  color: #111111 !important;
+}
+
+.opcion-envio-item strong {
+  color: #000000 !important;
+}
+
+.total-principal {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.cart-footer-nuevo {
+  padding: 24px !important;
+  border-top: 1px solid #000000 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  background-color: transparent !important;
+}
+
+.btn-finalizar-compra-unificado {
+  width: 100% !important;
+  height: 48px !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 2px !important;
+  cursor: pointer !important;
+  text-transform: uppercase !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-finalizar-compra-unificado:hover {
+  background-color: #1a1a1a !important;
+}
+
+.btn-seguir-viendo {
+  background: none !important;
+  border: none !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #111111 !important;
+  text-decoration: underline !important;
+  letter-spacing: 1px !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  padding: 0 !important;
+}
+
+.btn-seguir-viendo:hover {
+  color: #000000 !important;
+}
+
+@keyframes moverCamion {
+  0% { transform: translateX(-20px); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(360px); opacity: 0; }
+}
+
+@keyframes slideInSidebar {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideInDerecha {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInSutil {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
