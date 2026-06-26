@@ -14,7 +14,9 @@ export const CartSidebar = () => {
 
   useEffect(() => {
     if (isCartOpen) {
-      obtenerProductos().then(data => setProductosReales(data)).catch(err => console.error(err));
+      obtenerProductos()
+        .then((data: TiendanubeProducto[]) => setProductosReales(data))
+        .catch((err: unknown) => console.error(err));
     }
   }, [isCartOpen]);
 
@@ -25,10 +27,10 @@ export const CartSidebar = () => {
     
     let tipoPrendaBase = '';
     if (infoProductoReal && infoProductoReal.categories) {
-      const nombresCategorias = infoProductoReal.categories.map(c => c.name?.es?.toUpperCase().trim() || '');
-      if (nombresCategorias.some(n => n.includes('SUPERIOR'))) tipoPrendaBase = 'superior';
-      else if (nombresCategorias.some(n => n.includes('INFERIOR'))) tipoPrendaBase = 'inferior';
-      else if (nombresCategorias.some(n => n.includes('ACCESORIOS') || n.includes('ACCESORIO'))) tipoPrendaBase = 'accesorios';
+      const nombresCategorias = infoProductoReal.categories.map((c: { name?: { es?: string } }) => c.name?.es?.toUpperCase().trim() || '');
+      if (nombresCategorias.some((n: string) => n.includes('SUPERIOR'))) tipoPrendaBase = 'superior';
+      else if (nombresCategorias.some((n: string) => n.includes('INFERIOR'))) tipoPrendaBase = 'inferior';
+      else if (nombresCategorias.some((n: string) => n.includes('ACCESORIOS') || n.includes('ACCESORIO'))) tipoPrendaBase = 'accesorios';
     }
 
     if (!tipoPrendaBase) {
@@ -55,7 +57,7 @@ export const CartSidebar = () => {
       .filter(prod => {
         if (!prod || !prod.id) return false;
         const yaEstaEnCarrito = carrito.some(item => item.id && item.id.toString() === prod.id.toString());
-        const coincideCategoria = prod.categories?.some(c => 
+        const coincideCategoria = prod.categories?.some((c: { name?: { es?: string } }) => 
           categoriesBuscadas.includes(c.name?.es?.toUpperCase().trim() || '')
         );
         return coincideCategoria && !yaEstaEnCarrito;
@@ -83,11 +85,8 @@ export const CartSidebar = () => {
 
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
-
-    const item = carrito[0];
-    
-    // Forzamos el salto a la URL base nativa que Tiendanube procesa sin tirar 404
-    window.location.href = `https://aspenclothing.mitiendanube.com/apps/product/add-to-cart?variant_id=${item.variantId}&quantity=${item.cantidad}`;
+    // Redirección directa al carrito general usando tu subdominio operativo
+    window.location.href = `https://tienda.aspenclothing.com.ar/carrito/`;
   };
 
   const handleRestarCantidad = (item: any) => {
