@@ -86,7 +86,7 @@ export const CartSidebar = () => {
 
     const item = carrito[0];
     
-    // Usamos el endpoint interceptor de apps externas pasando la variante como parámetro query directo
+    // Forzamos el salto a la URL base nativa que Tiendanube procesa sin tirar 404
     window.location.href = `https://aspenclothing.mitiendanube.com/apps/product/add-to-cart?variant_id=${item.variantId}&quantity=${item.cantidad}`;
   };
 
