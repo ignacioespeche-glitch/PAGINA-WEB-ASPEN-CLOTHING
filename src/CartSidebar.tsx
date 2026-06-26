@@ -63,7 +63,6 @@ export const CartSidebar = () => {
       .slice(0, 3);
   };
 
-  // Corrección de nombre para limpiar los errores ts(2552) y ts(6133)
   const recomendaciones = obtenerRecommendations();
 
   const handleCalcularEnvio = async () => {
@@ -85,13 +84,11 @@ export const CartSidebar = () => {
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
 
-    // Estructura oficial masiva: VARIANT_ID:CANTIDAD separada por comas
-    const queryProductos = carrito
-      .map(item => `${item.variantId}:${item.cantidad}`)
-      .join(',');
-
-    // Redirección directa al endpoint oficial /cart/add/ sobre tu nuevo subdominio autorizado
-    window.location.href = `https://tienda.aspenclothing.com.ar/cart/add/?variants=${queryProductos}&next=checkout`;
+    // Tomamos la primera variante seleccionada
+    const item = carrito[0];
+    
+    // Formato nativo directo e infalible para empujar al carro bajo subdominio propio
+    window.location.href = `https://tienda.aspenclothing.com.ar/cart/add/${item.variantId}/`;
   };
 
   const handleRestarCantidad = (item: any) => {
