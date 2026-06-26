@@ -63,6 +63,7 @@ export const CartSidebar = () => {
       .slice(0, 3);
   };
 
+  // Corrección de nombre para limpiar los errores ts(2552) y ts(6133)
   const recomendaciones = obtenerRecommendations();
 
   const handleCalcularEnvio = async () => {
@@ -83,13 +84,16 @@ export const CartSidebar = () => {
 
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
-    
-    const queryProductos = carrito
-      .map(item => `${item.variantId}:${item.cantidad}`)
-      .join(',');
 
-    // Usamos el endpoint oficial de Tiendanube /cart/add/ pero directo sobre el subdominio desnudo
-    window.location.href = `https://aspenclothing.mitiendanube.com/cart/add/?variants=${queryProductos}&next=checkout`;
+    const item = carrito[0];
+    
+    if (carrito.length === 1) {
+      window.location.href = `https://tienda.aspenclothing.com.ar/apps/product/add-to-cart?variant_id=${item.variantId}&quantity=${item.cantidad}`;
+    } else {
+      const variantes = carrito.map(i => i.variantId).join(',');
+      const cantidades = carrito.map(i => i.cantidad).join(',');
+      window.location.href = `https://tienda.aspenclothing.com.ar/apps/product/add-to-cart?variant_ids=${variantes}&quantities=${cantidades}`;
+    }
   };
 
   const handleRestarCantidad = (item: any) => {
@@ -150,7 +154,7 @@ export const CartSidebar = () => {
                 <div className="cart-cross-selling-seccion">
                   <h3 className="cross-selling-titulo">COMPLETÁ TU LOOK</h3>
                   <div className="cross-selling-lista">
-                    {recomendaciones.map((prod) => {
+                    {recomendaciones.map((prod: TiendanubeProducto) => {
                       const primeraVariante = prod?.variants && prod.variants.length > 0 ? prod.variants[0] : null;
                       const precioBase = primeraVariante?.price ? parseFloat(primeraVariante.price) : 0;
                       const fotoUrl = prod?.images && prod.images.length > 0 ? prod.images[0].src : '';
