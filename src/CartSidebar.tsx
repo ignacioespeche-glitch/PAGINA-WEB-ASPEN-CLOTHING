@@ -84,11 +84,10 @@ export const CartSidebar = () => {
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
 
-    // Tomamos la primera variante seleccionada
     const item = carrito[0];
     
-    // Formato nativo directo e infalible para empujar al carro bajo subdominio propio
-    window.location.href = `https://tienda.aspenclothing.com.ar/cart/add/${item.variantId}/`;
+    // Usamos el endpoint interceptor de apps externas pasando la variante como parámetro query directo
+    window.location.href = `https://aspenclothing.mitiendanube.com/apps/product/add-to-cart?variant_id=${item.variantId}&quantity=${item.cantidad}`;
   };
 
   const handleRestarCantidad = (item: any) => {
