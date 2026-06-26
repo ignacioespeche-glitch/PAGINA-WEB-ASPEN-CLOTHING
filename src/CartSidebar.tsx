@@ -85,15 +85,13 @@ export const CartSidebar = () => {
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
 
-    const item = carrito[0];
-    
-    if (carrito.length === 1) {
-      window.location.href = `https://tienda.aspenclothing.com.ar/apps/product/add-to-cart?variant_id=${item.variantId}&quantity=${item.cantidad}`;
-    } else {
-      const variantes = carrito.map(i => i.variantId).join(',');
-      const cantidades = carrito.map(i => i.cantidad).join(',');
-      window.location.href = `https://tienda.aspenclothing.com.ar/apps/product/add-to-cart?variant_ids=${variantes}&quantities=${cantidades}`;
-    }
+    // Estructura oficial masiva: VARIANT_ID:CANTIDAD separada por comas
+    const queryProductos = carrito
+      .map(item => `${item.variantId}:${item.cantidad}`)
+      .join(',');
+
+    // Redirección directa al endpoint oficial /cart/add/ sobre tu nuevo subdominio autorizado
+    window.location.href = `https://tienda.aspenclothing.com.ar/cart/add/?variants=${queryProductos}&next=checkout`;
   };
 
   const handleRestarCantidad = (item: any) => {
