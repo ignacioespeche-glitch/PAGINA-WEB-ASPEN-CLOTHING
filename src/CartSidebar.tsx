@@ -1,9 +1,8 @@
 // src/CartSidebar.tsx
 import { useState, useEffect } from 'react';
 import { useCart } from './CartContext';
-import { obtenerProductos, calcularEnvioReal, type TiendanubeProducto, type OpcionEnvio } from './services/tiendanube';
+import { obtenerProductos, type TiendanubeProducto } from './services/tiendanube';
 
-// Definimos la interfaz para que TypeScript acepte la función que abre el checkout
 interface CartSidebarProps {
   onIniciarCheckout: () => void;
 }
@@ -12,10 +11,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
   const { carrito, removerDelCarrito, agregarAlCarrito, totalPrecio, isCartOpen, setIsCartOpen } = useCart();
 
   const [productosReales, setProductosReales] = useState<TiendanubeProducto[]>([]);
-  const [cpInput, setCpInput] = useState('');
-  const [cargandoEnvio, setCargandoEnvio] = useState(false);
-  const [envioCalculado, setEnvioCalculado] = useState(false);
-  const [opcionesEnvioReales, setOpcionesEnvioReales] = useState<OpcionEnvio[]>([]);
 
   useEffect(() => {
     if (isCartOpen) {
@@ -72,23 +67,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
 
   const recomendaciones = obtenerRecommendations();
 
-  const handleCalcularEnvio = async () => {
-    if (!cpInput.trim()) return;
-    setCargandoEnvio(true);
-    setEnvioCalculado(false);
-    setOpcionesEnvioReales([]);
-    try {
-      const tarifas = await calcularEnvioReal(cpInput, carrito);
-      setOpcionesEnvioReales(tarifas);
-      setEnvioCalculado(true);
-    } catch (error) {
-      console.error("Error al obtener cotización de envíos:", error);
-    } finally {
-      setCargandoEnvio(false);
-    }
-  };
-
-  // Lógica limpia: ya no redirige hacia afuera, ejecuta la prop y cierra el sidebar
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
     setIsCartOpen(false); 
@@ -189,40 +167,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
               )}
 
               <div className="cart-resumen-valores">
-                <div className="cart-fila-valores">
-                  <span>SUBTOTAL <small>(SIN ENVÍO)</small> :</span>
-                  <span>${totalPrecio.toLocaleString('es-AR')},00</span>
-                </div>
-                
-                <div className="cart-bloque-codigo-postal">
-                  <div className="cp-titulo">
-                    <span>Medios de envío</span>
-                    <span>—</span>
-                  </div>
-                  <div className="cp-input-grupo">
-                    <input type="text" placeholder="Tu código postal" className="cart-cp-input" value={cpInput} onChange={(e) => setCpInput(e.target.value)} disabled={cargandoEnvio} />
-                    <input type="button" className="cart-cp-btn" onClick={handleCalcularEnvio} disabled={cargandoEnvio} value={cargandoEnvio ? "..." : "CALCULAR"} />
-                  </div>
-
-                  {cargandoEnvio && <div className="camion-ruta-contenedor"><div className="camion-icono">🚚💨</div></div>}
-
-                  {envioCalculado && (
-                    <div className="envio-resultados-animados">
-                      {opcionesEnvioReales.length === 0 ? (
-                        <div className="opcion-envio-item"><span>No hay envíos disponibles para este CP.</span></div>
-                      ) : (
-                        opcionesEnvioReales.map((opcion, i) => (
-                          <div key={i} className="opcion-envio-item">
-                            <span>{opcion.name}:</span>
-                            <strong>{opcion.price === 0 ? 'GRATIS' : `$${opcion.price.toLocaleString('es-AR')},00`}</strong>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                  <span className="cp-ayuda">NO SÉ MI CÓDIGO POSTAL</span>
-                </div>
-
                 <div className="cart-fila-valores total-principal">
                   <span>TOTAL:</span>
                   <span>${totalPrecio.toLocaleString('es-AR')},00</span>
