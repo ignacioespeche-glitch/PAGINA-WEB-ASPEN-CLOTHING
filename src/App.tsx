@@ -9,9 +9,9 @@ import { ProductoDetalle } from './ProductoDetalle';
 import { Footer } from './Footer';
 import { CartProvider, useCart } from './CartContext'; 
 import { CartSidebar } from './CartSidebar'; 
-import { CheckoutForm } from './CheckoutForm.tsx'; // Forzamos la extensión explícita para romper el caché de TS
+import { CheckoutForm } from './CheckoutForm.tsx'; 
 
-const HeaderNav = ({ busqueda, setBusqueda }: any) => {
+const HeaderNav = ({ busqueda, setBusqueda, setIsCheckoutOpen }: any) => {
   const { carrito, setIsCartOpen } = useCart(); 
   const navigate = useNavigate();
 
@@ -19,6 +19,7 @@ const HeaderNav = ({ busqueda, setBusqueda }: any) => {
 
   const handleBuscar = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && busqueda.trim() !== '') {
+      setIsCheckoutOpen(false); 
       navigate('/buscar'); 
     }
   };
@@ -26,15 +27,15 @@ const HeaderNav = ({ busqueda, setBusqueda }: any) => {
   return (
     <header className="main-header">
       <div className="logo">
-        <Link to="/">
+        <Link to="/" onClick={() => setIsCheckoutOpen(false)}>
           <img src="/images/LOGO ASPEN.jpeg" alt="ASPEN CLOTHING" />
         </Link>
       </div>
       <nav className="nav-menu">
         <ul>
-          <li><Link to="/superior">SUPERIOR</Link></li>
-          <li><Link to="/inferior">INFERIOR</Link></li>
-          <li><Link to="/accesorios">ACCESORIOS</Link></li>
+          <li><Link to="/superior" onClick={() => setIsCheckoutOpen(false)}>SUPERIOR</Link></li>
+          <li><Link to="/inferior" onClick={() => setIsCheckoutOpen(false)}>INFERIOR</Link></li>
+          <li><Link to="/accesorios" onClick={() => setIsCheckoutOpen(false)}>ACCESORIOS</Link></li>
         </ul>
       </nav>
       <div className="nav-icons">
@@ -67,10 +68,11 @@ function AppContent() {
     <BrowserRouter>
       <CartSidebar onIniciarCheckout={() => setIsCheckoutOpen(true)} /> 
       
-      <HeaderNav busqueda={busqueda} setBusqueda={setBusqueda} />
+      <HeaderNav busqueda={busqueda} setBusqueda={setBusqueda} setIsCheckoutOpen={setIsCheckoutOpen} />
       
       {isCheckoutOpen ? (
-        <CheckoutForm onCancelar={() => setIsCheckoutOpen(false)} />
+        // CORRECCIÓN: Se remueve la prop onCancelar que ya no recibe el componente
+        <CheckoutForm />
       ) : (
         <main>
           <Routes>

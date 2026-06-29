@@ -1,20 +1,15 @@
 // src/CheckoutForm.tsx
-import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { useCart } from './CartContext';
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
 initMercadoPago('YOUR_PUBLIC_KEY_HERE');
 
-interface CheckoutFormProps {
-  onCancelar: () => void;
-}
-
+// CORRECCIÓN: Se restituye el tipo de datos para el control de la grilla de pagos
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
-export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
+export const CheckoutForm = () => {
   const { carrito, totalPrecio } = useCart();
-  const location = useLocation(); // Escucha los movimientos de la URL
   
   const [paso, setPaso] = useState<'datos' | 'pago'>('datos');
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); 
@@ -24,12 +19,6 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
   const [telefono, setTelefono] = useState('');
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
-
-  // 🛠️ CONTROL DE TRABAS: Si el usuario toca el logo o el menú de categorías,
-  // la URL cambia y este efecto cierra automáticamente el checkout liberando la pantalla principal.
-  useEffect(() => {
-    onCancelar();
-  }, [location.pathname]);
 
   const precioBaseCatalogo = totalPrecio; 
   const precioConRecargoTarjeta = Math.round(totalPrecio * 1.20); 
@@ -69,8 +58,6 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
   return (
     <div className="checkout-container" style={{ padding: '40px max(4vw, 20px)', minHeight: '80vh', fontFamily: 'Inter, sans-serif' }}>
       
-      {/* Botón "Volver a la tienda" eliminado por completo */}
-
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '80px', alignItems: 'start' }}>
         
         {/* COLUMNA IZQUIERDA */}
