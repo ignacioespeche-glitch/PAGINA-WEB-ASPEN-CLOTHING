@@ -42,6 +42,17 @@ export const CheckoutForm = () => {
   
   const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConRecargoTarjeta : precioBaseCatalogo;
 
+  // Generación del link de WhatsApp dinámico con el número 542612515727
+  const obtenerLinkWhatsAppEfectivo = () => {
+    const telefonoLocal = '542612515727';
+    const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
+    const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
+    
+    const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
+    
+    return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
+  };
+
   const handleAplicarCupon = async () => {
     setErrorCupon('');
     if (!cuponInput.trim()) return;
@@ -66,6 +77,8 @@ export const CheckoutForm = () => {
 
     if (metodoPago === 'tarjeta') {
       alert("Por favor, completá los datos de tu tarjeta en el módulo de Mercado Pago abajo y presioná el botón de la pasarela.");
+    } else if (metodoPago === 'efectivo') {
+      window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
     } else {
       alert(`¡Pedido de Aspen registrado con éxito! Procesado por método: ${metodoPago.toUpperCase()}. Te enviaremos los detalles de tu orden.`);
     }
@@ -141,7 +154,7 @@ export const CheckoutForm = () => {
               </label>
             </div>
 
-            {/* Módulos dinámicos informativos actualizados */}
+            {/* Módulos dinámicos informativos */}
             <div style={{ marginTop: '4px' }}>
               {metodoPago === 'tarjeta' && (
                 <div className="mercadopago-brick-container" style={{ border: '1px solid #000', padding: '16px', backgroundColor: '#fff' }}>
@@ -158,15 +171,25 @@ export const CheckoutForm = () => {
                   <p style={{ margin: 0, fontWeight: 700, letterSpacing: '0.5px' }}>DATOS DE NUESTRA CUENTA:</p>
                   <p style={{ margin: 0 }}><strong>BANCO:</strong> MERCADO PAGO</p>
                   <p style={{ margin: 0 }}><strong>ALIAS:</strong> aspen.mdz</p>
-                  <p style={{ margin: 0 }}><strong>TITULAR:</strong> giuliano micarelli</p>
+                  <p style={{ margin: 0 }}><strong>TITULAR:</strong> GIULIANO MICARELLI</p>
                   <p style={{ margin: '10px 0 0 0', color: '#555', fontSize: '11px' }}>* Transferí el monto neto de <strong>${precioBaseCatalogo.toLocaleString('es-AR')},00</strong> y dale al botón de abajo para finalizar.</p>
                 </div>
               )}
 
               {metodoPago === 'efectivo' && (
-                <div style={{ padding: '24px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <p style={{ margin: 0, fontWeight: 700 }}>PAGO EN SUCURSAL:</p>
-                  <p style={{ margin: 0 }}>Te generaremos el cupón oficial de Rapipago / Pago Fácil por un total neto de <strong>${precioBaseCatalogo.toLocaleString('es-AR')},00</strong> al enviar la orden.</p>
+                <div style={{ padding: '24px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solicitud de Cupón por WhatsApp:</p>
+                  <p style={{ margin: 0, color: '#333', lineHeight: '1.6' }}>
+                    Al hacer clic en el botón de abajo, se abrirá un chat directo con nuestro local para pasarte el código de barra o QR de cobro por un total neto de <strong>${precioBaseCatalogo.toLocaleString('es-AR')},00</strong>.
+                  </p>
+                  <a 
+                    href={obtenerLinkWhatsAppEfectivo()} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#000', fontWeight: 700, textDecoration: 'underline', fontSize: '11px', letterSpacing: '0.5px' }}
+                  >
+                    ¿PREFIERES SOLICITARLO MANUALMENTE? HAGA CLIC AQUÍ
+                  </a>
                 </div>
               )}
             </div>
@@ -178,7 +201,7 @@ export const CheckoutForm = () => {
               type="submit" 
               style={{ width: '100%', background: '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
             >
-              PAGAR AHORA
+              {metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
             </button>
           )}
         </div>
