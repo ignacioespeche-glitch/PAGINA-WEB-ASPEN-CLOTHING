@@ -1,5 +1,6 @@
 // src/CheckoutForm.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useCart } from './CartContext';
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
@@ -13,9 +14,10 @@ type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
 export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
   const { carrito, totalPrecio } = useCart();
+  const location = useLocation(); // Escucha los movimientos de la URL
   
   const [paso, setPaso] = useState<'datos' | 'pago'>('datos');
-  const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); // Por defecto efectivo/transferencia para mantener el precio del catálogo
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); 
   
   const [email, setEmail] = useState('');
   const [nombre, setNombre] = useState('');
@@ -23,9 +25,14 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
-  // NUEVA MATEMÁTICA TRANSPARENTE
-  const precioBaseCatalogo = totalPrecio; // El del catálogo ($70.000)
-  const precioConRecargoTarjeta = Math.round(totalPrecio * 1.20); // Solo sube si elige tarjeta de crédito ($84.000)
+  // 🛠️ CONTROL DE TRABAS: Si el usuario toca el logo o el menú de categorías,
+  // la URL cambia y este efecto cierra automáticamente el checkout liberando la pantalla principal.
+  useEffect(() => {
+    onCancelar();
+  }, [location.pathname]);
+
+  const precioBaseCatalogo = totalPrecio; 
+  const precioConRecargoTarjeta = Math.round(totalPrecio * 1.20); 
   
   const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConRecargoTarjeta : precioBaseCatalogo;
 
@@ -62,12 +69,7 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
   return (
     <div className="checkout-container" style={{ padding: '40px max(4vw, 20px)', minHeight: '80vh', fontFamily: 'Inter, sans-serif' }}>
       
-      <button 
-        onClick={onCancelar} 
-        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '40px', textTransform: 'uppercase' }}
-      >
-        ← VOLVER A LA TIENDA
-      </button>
+      {/* Botón "Volver a la tienda" eliminado por completo */}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '80px', alignItems: 'start' }}>
         
