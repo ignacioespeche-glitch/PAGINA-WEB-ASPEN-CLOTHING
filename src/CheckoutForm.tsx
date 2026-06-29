@@ -1,10 +1,7 @@
 // src/CheckoutForm.tsx
 import { useState } from 'react';
 import { useCart } from './CartContext';
-import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 import { validarCuponTiendanube, crearOrdenTiendanube, type CuponDescuento } from './services/tiendanube';
-
-initMercadoPago('YOUR_PUBLIC_KEY_HERE');
 
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
@@ -13,16 +10,25 @@ export const CheckoutForm = () => {
   
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); 
   
+  // Campos de datos obligatorios del cliente
   const [email, setEmail] = useState('');
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
+  // Estados locales para el maquetado nativo de la tarjeta
+  const [numeroTarjeta, setNumeroTarjeta] = useState('');
+  const [vencimientoTarjeta, setVencimientoTarjeta] = useState('');
+  const [cvvTarjeta, setCvvTarjeta] = useState('');
+  const [nombreTarjeta, setNombreTarjeta] = useState('');
+
+  // Estados del sistema de cupones
   const [cuponInput, setCuponInput] = useState('');
   const [cuponAplicado, setCuponAplicado] = useState<CuponDescuento | null>(null);
   const [errorCupon, setErrorCupon] = useState('');
 
+  // Lógica matemática del carro y beneficios
   let descuentoCalculado = 0;
   if (cuponAplicado) {
     if (cuponAplicado.tipo === 'percentage') {
@@ -42,7 +48,7 @@ export const CheckoutForm = () => {
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
     
-    const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
+    const mensaje = `Hola Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -60,7 +66,7 @@ export const CheckoutForm = () => {
     }
   };
 
-  // CONTROLADOR UNIFICADO: Guarda los datos de la venta primero en Tiendanube
+  // CONTROLADOR UNIFICADO DE PAGO: Procesa la orden y la guarda en Tiendanube
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -69,7 +75,12 @@ export const CheckoutForm = () => {
       return;
     }
 
-    // 1. Enviamos la información de la venta a Tiendanube de manera síncrona antes de salir de la app
+    if (metodoPago === 'tarjeta' && (!numeroTarjeta || !vencimientoTarjeta || !cvvTarjeta || !nombreTarjeta)) {
+      alert("Por favor completa todos los datos de tu tarjeta de crédito.");
+      return;
+    }
+
+    // Sincronizamos la venta con Tiendanube primero
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     const ordenGuardada = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado);
 
@@ -78,30 +89,13 @@ export const CheckoutForm = () => {
       return;
     }
 
-    // 2. Si se guardó con éxito en el panel de Ventas, ejecutamos la acción del medio de pago elegido
+    // Comportamiento según el método
     if (metodoPago === 'tarjeta') {
-      alert("Por favor, completá los datos de tu tarjeta en el módulo de Mercado Pago abajo y presioná el botón de la pasarela.");
+      alert(`¡Venta con Tarjeta registrada con éxito en Tiendanube por $${montoFinalAMostrar.toLocaleString('es-AR')},00! Procesando cobro...`);
     } else if (metodoPago === 'efectivo') {
       window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
     } else {
       alert(`¡Pedido registrado con éxito en tu panel de Tiendanube! Te enviaremos los detalles para coordinar la transferencia.`);
-    }
-  };
-
-  const handlePaymentSubmit = async (param: any) => {
-    try {
-      console.log("Datos enviados a backend:", param.formData);
-      alert("¡Pago con tarjeta procesado con éxito en Aspen Clothing!");
-    } catch (error) {
-      console.error("Error al procesar pago con tarjeta:", error);
-    }
-  };
-
-  const mercadoPagoCustomization: any = {
-    visual: { style: { theme: 'flat' } },
-    paymentMethods: {
-      maxInstallments: 3,
-      types: { excluded: ['ticket', 'bank_transfer'] }
     }
   };
 
@@ -156,14 +150,56 @@ export const CheckoutForm = () => {
               </label>
             </div>
 
+            {/* Despliegue dinámico de información de pasarelas */}
             <div style={{ marginTop: '4px' }}>
               {metodoPago === 'tarjeta' && (
-                <div className="mercadopago-brick-container" style={{ border: '1px solid #000', padding: '16px', backgroundColor: '#fff' }}>
-                  <Payment
-                    initialization={{ amount: precioConRecargoTarjeta, preferenceId: undefined }}
-                    customization={mercadoPagoCustomization}
-                    onSubmit={handlePaymentSubmit}
+                <div style={{ border: '1px solid #000', padding: '24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.5px' }}>CREDIT CARD</span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <span style={{ fontSize: '9px', fontWeight: 700, border: '1px solid #ccc', padding: '2px 6px', color: '#1A458B' }}>VISA</span>
+                      <span style={{ fontSize: '9px', fontWeight: 700, border: '1px solid #ccc', padding: '2px 6px', color: '#EA3435' }}>MC</span>
+                    </div>
+                  </div>
+
+                  <input 
+                    type="text" 
+                    placeholder="CARD NUMBER" 
+                    value={numeroTarjeta} 
+                    onChange={(e) => setNumeroTarjeta(e.target.value)} 
+                    style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
                   />
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <input 
+                      type="text" 
+                      placeholder="EXPIRATION DATE (MM / YY)" 
+                      value={vencimientoTarjeta} 
+                      onChange={(e) => setVencimientoTarjeta(e.target.value)} 
+                      style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
+                    />
+                    <input 
+                      type="password" 
+                      placeholder="SECURITY CODE" 
+                      maxLength={4}
+                      value={cvvTarjeta} 
+                      onChange={(e) => setCvvTarjeta(e.target.value)} 
+                      style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
+                    />
+                  </div>
+
+                  <input 
+                    type="text" 
+                    placeholder="NAME ON CARD" 
+                    value={nombreTarjeta} 
+                    onChange={(e) => setNombreTarjeta(e.target.value)} 
+                    style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none', textTransform: 'uppercase' }} 
+                  />
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginTop: '4px' }}>
+                    <input type="checkbox" defaultChecked style={{ accentColor: '#000' }} />
+                    <span style={{ fontSize: '11px', color: '#555' }}>Use shipping address as billing address</span>
+                  </label>
                 </div>
               )}
 
@@ -188,14 +224,13 @@ export const CheckoutForm = () => {
             </div>
           </div>
 
-          {metodoPago !== 'tarjeta' && (
-            <button 
-              type="submit" 
-              style={{ width: '100%', background: '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
-            >
-              {metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
-            </button>
-          )}
+          {/* BOTÓN DEFINITIVO GIGANTE UNIFICADO */}
+          <button 
+            type="submit" 
+            style={{ width: '100%', background: '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
+          >
+            {metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
+          </button>
         </div>
 
         {/* COLUMNA DERECHA PERMANENTE */}
