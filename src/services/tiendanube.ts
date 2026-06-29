@@ -25,6 +25,13 @@ export interface OpcionEnvio {
   loading_time?: string;
 }
 
+// Interfaz para el retorno de validación del cupón
+export interface CuponDescuento {
+  codigo: string;
+  tipo: 'percentage' | 'absolute';
+  valor: number;
+}
+
 export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   try {
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/products`, {
@@ -73,10 +80,9 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   }
 };
 
-// 🚚 NUEVA FUNCIÓN: Consulta tarifas de envío reales basándose en el CP y los ítems del carro
+// 🚚 Consulta tarifas de envío reales basándose en el CP y los ítems del carro
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
   try {
-    // Estructuramos los productos tal cual los espera el calculador de Tiendanube
     const itemsPayload = carrito.map(item => ({
       variant_id: item.variantId,
       quantity: item.cantidad
@@ -105,7 +111,6 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
 
     const data = await response.json();
     
-    // Mapeamos las opciones de correo devueltas (Andreani, Correo Argentino, etc.)
     if (Array.isArray(data)) {
       return data.map((rate: any) => ({
         name: rate.name,
@@ -117,5 +122,46 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
   } catch (error) {
     console.error("Error conectando con la calculadora de Tiendanube:", error);
     return [];
+  }
+};
+
+// 🎟️ NUEVA FUNCIÓN: Valida cupones directamente contra la API de Tiendanube
+export const validarCuponTiendanube = async (codigoCupon: string): Promise<CuponDescuento | null> => {
+  try {
+    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/coupons`, {
+      method: 'GET',
+      headers: {
+        'Authentication': `bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+      }
+    });
+
+    if (!response.ok) {
+      console.error("Error al traer cupones de Tiendanube:", response.statusText);
+      return null;
+    }
+
+    const cupones = await response.json();
+    
+    if (Array.isArray(cupones)) {
+      // Buscamos el cupón que coincida en mayúsculas/minúsculas sin espacios redundantes
+      const cuponEncontrado = cupones.find(
+        (c: any) => c.code.trim().toLowerCase() === codigoCupon.trim().toLowerCase()
+      );
+
+      // Verificamos si existe, está activo, no fue eliminado y es válido temporalmente
+      if (cuponEncontrado && cuponEncontrado.enabled) {
+        return {
+          codigo: cuponEncontrado.code.toUpperCase(),
+          tipo: cuponEncontrado.type, // 'percentage' o 'absolute'
+          valor: parseFloat(cuponEncontrado.value)
+        };
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("Error conectando con el validador de cupones de Tiendanube:", error);
+    return null;
   }
 };
