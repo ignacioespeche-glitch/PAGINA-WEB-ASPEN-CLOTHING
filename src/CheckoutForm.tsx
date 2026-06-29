@@ -28,7 +28,24 @@ export const CheckoutForm = () => {
   const [cuponAplicado, setCuponAplicado] = useState<CuponDescuento | null>(null);
   const [errorCupon, setErrorCupon] = useState('');
 
-  // Función para detectar de forma analítica si es Visa o Mastercard
+  // Formateador analítico para espaciar el número cada 4 dígitos
+  const handleNumeroTarjetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/\D/g, ''); // Quita todo lo que no sea número
+    const formateado = input.match(/.{1,4}/g)?.join(' ') || ''; // Agrupa de a 4 con espacios
+    if (formateado.length <= 19) { // 16 números + 3 espacios max
+      setNumeroTarjeta(formateado);
+    }
+  };
+
+  // Limitador estricto para el código de seguridad a máximo 3 dígitos
+  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/\D/g, ''); // Solo números
+    if (input.length <= 3) {
+      setCvvTarjeta(input);
+    }
+  };
+
+  // Función para detectar si es Visa o Mastercard
   const obtenerMarcaTarjeta = (numero: string) => {
     const limpio = numero.replace(/\s+/g, '');
     if (limpio.startsWith('4')) return 'Visa';
@@ -104,7 +121,6 @@ export const CheckoutForm = () => {
       };
     }
 
-    // Sincronizamos la venta pasándole la marca (Visa/Mastercard) y los últimos 4 dígitos a Tiendanube
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     const ordenGuardada = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
@@ -126,7 +142,7 @@ export const CheckoutForm = () => {
     <div className="checkout-container" style={{ padding: '140px max(4vw, 20px) 40px max(4vw, 20px)', minHeight: '80vh', fontFamily: 'Inter, sans-serif' }}>
       <form onSubmit={handlePagarAhoraSubmit} style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '80px', alignItems: 'start' }}>
         
-        {/* COLUMNA IZQUIERDA CONTINUA */}
+        {/* COLUMNA IZQUIERDA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
           
           {/* BLOQUE 1: IDENTIFICACIÓN Y ENVÍO */}
@@ -177,43 +193,43 @@ export const CheckoutForm = () => {
               {metodoPago === 'tarjeta' && (
                 <div style={{ border: '1px solid #000', padding: '24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.5px' }}>CREDIT CARD</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.5px' }}>TARJETA DE CRÉDITO</span>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      {/* Las marcas se iluminan de forma dinámica según los números ingresados */}
                       <span style={{ fontSize: '9px', fontWeight: 700, border: marcaDetectada === 'Visa' ? '2px solid #000' : '1px solid #ccc', padding: '2px 6px', color: '#1A458B', backgroundColor: marcaDetectada === 'Visa' ? '#f0f4ff' : 'transparent' }}>VISA</span>
                       <span style={{ fontSize: '9px', fontWeight: 700, border: marcaDetectada === 'Mastercard' ? '2px solid #000' : '1px solid #ccc', padding: '2px 6px', color: '#EA3435', backgroundColor: marcaDetectada === 'Mastercard' ? '#fff0f0' : 'transparent' }}>MC</span>
                     </div>
                   </div>
 
+                  {/* Número de tarjeta formateado con espacios cada 4 números */}
                   <input 
                     type="text" 
-                    placeholder="CARD NUMBER" 
+                    placeholder="NÚMERO DE TARJETA" 
                     value={numeroTarjeta} 
-                    onChange={(e) => setNumeroTarjeta(e.target.value)} 
+                    onChange={handleNumeroTarjetaChange} 
                     style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
                   />
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <input 
                       type="text" 
-                      placeholder="EXPIRATION DATE (MM / YY)" 
+                      placeholder="VENCIMIENTO (MM / AA)" 
                       value={vencimientoTarjeta} 
                       onChange={(e) => setVencimientoTarjeta(e.target.value)} 
                       style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
                     />
+                    {/* Código de seguridad visible y limitado a 3 caracteres máximo */}
                     <input 
-                      type="password" 
-                      placeholder="SECURITY CODE" 
-                      maxLength={4}
+                      type="text" 
+                      placeholder="CÓDIGO DE SEGURIDAD" 
                       value={cvvTarjeta} 
-                      onChange={(e) => setCvvTarjeta(e.target.value)} 
+                      onChange={handleCvvChange} 
                       style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
                     />
                   </div>
 
                   <input 
                     type="text" 
-                    placeholder="NAME ON CARD" 
+                    placeholder="NOMBRE COMO FIGURA EN LA TARJETA" 
                     value={nombreTarjeta} 
                     onChange={(e) => setNombreTarjeta(e.target.value)} 
                     style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none', textTransform: 'uppercase' }} 
@@ -221,7 +237,7 @@ export const CheckoutForm = () => {
 
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginTop: '4px' }}>
                     <input type="checkbox" defaultChecked style={{ accentColor: '#000' }} />
-                    <span style={{ fontSize: '11px', color: '#555' }}>Use shipping address as billing address</span>
+                    <span style={{ fontSize: '11px', color: '#555' }}>Utilizar la misma dirección para la facturación</span>
                   </label>
                 </div>
               )}
@@ -247,7 +263,7 @@ export const CheckoutForm = () => {
             </div>
           </div>
 
-          {/* BOTÓN DEFINITIVO GIGANTE UNIFICADO */}
+          {/* BOTÓN DEFINITIVO */}
           <button 
             type="submit" 
             style={{ width: '100%', background: '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
@@ -287,13 +303,13 @@ export const CheckoutForm = () => {
             <div style={{ display: 'flex', gap: '10px' }}>
               <input 
                 type="text" 
-                placeholder="GIFT CARD OR DISCOUNT CODE" 
+                placeholder="CÓDIGO DE DESCUENTO" 
                 value={cuponInput} 
                 onChange={(e) => setCuponInput(e.target.value)} 
                 style={{ flex: 1, padding: '12px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', outline: 'none' }}
               />
               <button type="button" onClick={handleAplicarCupon} style={{ background: '#000', color: '#fff', border: 'none', padding: '0 24px', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', cursor: 'pointer', textTransform: 'uppercase' }}>
-                APPLY
+                APLICAR
               </button>
             </div>
             
@@ -309,7 +325,7 @@ export const CheckoutForm = () => {
             )}
           </div>
 
-          {/* DESGLOSE FINAL DE MONTOS */}
+          {/* DESGLOSE FINAL */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#000', fontWeight: 500 }}>
               <span>SUBTOTAL:</span>
