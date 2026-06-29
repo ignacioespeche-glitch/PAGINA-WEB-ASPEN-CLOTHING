@@ -31,19 +31,15 @@ export const Categoria = ({ titulo, busqueda }: Props) => {
     const nombreProducto = producto.name?.es || '';
     const categoriaPagina = titulo.toUpperCase().trim();
 
-    // 1. FILTRADO ESTRICTO POR CATEGORÍAS Y SUBCATEGORÍAS DE TIENDANUBE
     if (categoriaPagina !== "RESULTADOS DE BÚSQUEDA") {
       const perteneceACategoria = producto.categories?.some(cat => {
         const nombreCatReal = cat.name?.es?.toUpperCase().trim() || '';
-        // Valida que coincida con la principal (ej: "SUPERIOR") o su subcategoría ("SUPERIOR HOME")
         return nombreCatReal === categoriaPagina || nombreCatReal === `${categoriaPagina} HOME`;
       });
 
-      // Si no pertenece a la sección activa de la barra de navegación, queda fuera
       if (!perteneceACategoria) return false;
     }
 
-    // 2. FILTROS COMPLEMENTARIOS (BÚSQUEDA INPUT, COLOR Y CALCE DEL PANEL)
     const coincideBusqueda = nombreProducto.toLowerCase().includes(busqueda.toLowerCase());
     const coincideColor = filtroColor === '' || nombreProducto.toLowerCase().includes(filtroColor.toLowerCase());
     const coincideCalce = filtroCalce === '' || nombreProducto.toLowerCase().includes(filtroCalce.toLowerCase());
@@ -121,9 +117,17 @@ export const Categoria = ({ titulo, busqueda }: Props) => {
       {/* GRILLA DE CATÁLOGO */}
       <div className="grilla-categoria">
         {productosFiltrados.map((producto) => {
+          const precioBase = producto.variants?.[0]?.price ? parseFloat(producto.variants[0].price) : 0;
+          const precioListaConAumento = Math.round(precioBase * 1.20);
+          const valorCuota = Math.round(precioListaConAumento / 3);
+
           return (
-            <Link to={`/producto/${producto.id}`} key={producto.id} className="tarjeta-destacada" style={{ textDecoration: 'none', color: 'inherit' }}>
-              
+            <Link 
+              to={`/producto/${producto.id}`} 
+              key={producto.id} 
+              className="tarjeta-destacada" 
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
               <div className="contenedor-foto-destacada">
                 {producto.images && producto.images.length > 0 ? (
                   <>
@@ -139,9 +143,22 @@ export const Categoria = ({ titulo, busqueda }: Props) => {
                 )}
               </div>
 
-              {/* Solo el nombre del producto, sin la etiqueta del precio */}
-              <div className="info-prenda-detalles">
-                <h3>{producto.name?.es}</h3>
+              {/* Agregamos el desglose completo estilo Moscú */}
+              <div className="info-prenda-detalles" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 0' }}>
+                <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {producto.name?.es}
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontFamily: 'Inter, sans-serif' }}>
+                  <span style={{ fontSize: '11px', color: '#999', textDecoration: 'line-through' }}>
+                    ${precioListaConAumento.toLocaleString('es-AR')},00
+                  </span>
+                  <strong style={{ fontSize: '12px', color: '#059669', fontWeight: 700 }}>
+                    ${precioBase.toLocaleString('es-AR')},00 por Transferencia
+                  </strong>
+                  <span style={{ fontSize: '11px', color: '#000', letterSpacing: '0.2px' }}>
+                    3 cuotas de ${valorCuota.toLocaleString('es-AR')},00 sin interés con 💳
+                  </span>
+                </div>
               </div>
               
             </Link>
