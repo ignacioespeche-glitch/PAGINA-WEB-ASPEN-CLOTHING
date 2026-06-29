@@ -20,7 +20,6 @@ export const Home = () => {
     });
   }, []);
 
-  // FUNCIÓN ORIGINAL
   const obtenerGrillaPorCategoria = (nombreCategoria: string): ProductoGrilla[] => {
     const categoriaUpper = nombreCategoria.toUpperCase().trim();
     const subcategoriaHome = `${categoriaUpper} HOME`;
@@ -77,11 +76,15 @@ export const Home = () => {
         <div className="grilla-destacados">
           {destacadosSuperior.map((producto) => {
             const precioBase = producto.variants?.[0]?.price ? parseFloat(producto.variants[0].price) : 0;
+            const precioListaConAumento = Math.round(precioBase * 1.20);
+            const valorCuota = Math.round(precioListaConAumento / 3);
+
             return (
               <Link 
                 to={producto.esVacio ? `/producto/999` : `/producto/${producto.id}`} 
                 key={`sup-${producto.id}`} 
                 className="tarjeta-destacada"
+                style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <div className="contenedor-foto-destacada">
                   {producto.images && producto.images.length > 0 ? (
@@ -98,9 +101,23 @@ export const Home = () => {
                   )}
                 </div>
                 
-                <div className="info-prenda-detalles">
-                  <h3>{producto.esVacio ? 'PRÓXIMAMENTE' : (producto.name?.es || 'ASPEN ITEM')}</h3>
-                  {!producto.esVacio && <p>${precioBase.toLocaleString('es-AR')} ARS</p>}
+                <div className="info-prenda-detalles" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 0' }}>
+                  <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {producto.esVacio ? 'PRÓXIMAMENTE' : (producto.name?.es || 'ASPEN ITEM')}
+                  </h3>
+                  {!producto.esVacio && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontFamily: 'Inter, sans-serif' }}>
+                      <span style={{ fontSize: '11px', color: '#999', textDecoration: 'line-through' }}>
+                        ${precioListaConAumento.toLocaleString('es-AR')},00
+                      </span>
+                      <strong style={{ fontSize: '12px', color: '#059669', fontWeight: 700 }}>
+                        ${precioBase.toLocaleString('es-AR')},00 por Transferencia
+                      </strong>
+                      <span style={{ fontSize: '11px', color: '#000', letterSpacing: '0.2px' }}>
+                        3 cuotas de ${valorCuota.toLocaleString('es-AR')},00 sin interés con 💳
+                      </span>
+                    </div>
+                  )}
                 </div>
               </Link>
             );
@@ -133,11 +150,15 @@ export const Home = () => {
         <div className="grilla-destacados">
           {destacadosInferior.map((producto) => {
             const precioBase = producto.variants?.[0]?.price ? parseFloat(producto.variants[0].price) : 0;
+            const precioListaConAumento = Math.round(precioBase * 1.20);
+            const valorCuota = Math.round(precioListaConAumento / 3);
+
             return (
               <Link 
                 to={producto.esVacio ? `/producto/999` : `/producto/${producto.id}`} 
                 key={`inf-${producto.id}`} 
                 className="tarjeta-destacada"
+                style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <div className="contenedor-foto-destacada">
                   {producto.images && producto.images.length > 0 ? (
@@ -154,9 +175,23 @@ export const Home = () => {
                   )}
                 </div>
                 
-                <div className="info-prenda-detalles">
-                  <h3>{producto.esVacio ? 'PRÓXIMAMENTE' : (producto.name?.es || 'ASPEN ITEM')}</h3>
-                  {!producto.esVacio && <p>${precioBase.toLocaleString('es-AR')} ARS</p>}
+                <div className="info-prenda-detalles" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 0' }}>
+                  <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {producto.esVacio ? 'PRÓXIMAMENTE' : (producto.name?.es || 'ASPEN ITEM')}
+                  </h3>
+                  {!producto.esVacio && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontFamily: 'Inter, sans-serif' }}>
+                      <span style={{ fontSize: '11px', color: '#999', textDecoration: 'line-through' }}>
+                        ${precioListaConAumento.toLocaleString('es-AR')},00
+                      </span>
+                      <strong style={{ fontSize: '12px', color: '#059669', fontWeight: 700 }}>
+                        ${precioBase.toLocaleString('es-AR')},00 por Transferencia
+                      </strong>
+                      <span style={{ fontSize: '11px', color: '#000', letterSpacing: '0.2px' }}>
+                        3 cuotas de ${valorCuota.toLocaleString('es-AR')},00 sin interés con 💳
+                      </span>
+                    </div>
+                  )}
                 </div>
               </Link>
             );
@@ -189,11 +224,15 @@ export const Home = () => {
         <div className="grilla-destacados">
           {destacadosAccesorios.map((producto) => {
             const precioBase = producto.variants?.[0]?.price ? parseFloat(producto.variants[0].price) : 0;
+            const precioListaConAumento = Math.round(precioBase * 1.20);
+            const valorCuota = Math.round(precioListaConAumento / 3);
+
             return (
               <Link 
                 to={producto.esVacio ? `/producto/999` : `/producto/${producto.id}`} 
                 key={`acc-${producto.id}`} 
                 className="tarjeta-destacada"
+                style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <div className="contenedor-foto-destacada">
                   {producto.images && producto.images.length > 0 ? (
@@ -210,9 +249,23 @@ export const Home = () => {
                   )}
                 </div>
                 
-                <div className="info-prenda-detalles">
-                  <h3>{producto.esVacio ? 'PRÓXIMAMENTE' : (producto.name?.es || 'ASPEN ITEM')}</h3>
-                  {!producto.esVacio && <p>${precioBase.toLocaleString('es-AR')} ARS</p>}
+                <div className="info-prenda-detalles" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 0' }}>
+                  <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {producto.esVacio ? 'PRÓXIMAMENTE' : (producto.name?.es || 'ASPEN ITEM')}
+                  </h3>
+                  {!producto.esVacio && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontFamily: 'Inter, sans-serif' }}>
+                      <span style={{ fontSize: '11px', color: '#999', textDecoration: 'line-through' }}>
+                        ${precioListaConAumento.toLocaleString('es-AR')},00
+                      </span>
+                      <strong style={{ fontSize: '12px', color: '#059669', fontWeight: 700 }}>
+                        ${precioBase.toLocaleString('es-AR')},00 por Transferencia
+                      </strong>
+                      <span style={{ fontSize: '11px', color: '#000', letterSpacing: '0.2px' }}>
+                        3 cuotas de ${valorCuota.toLocaleString('es-AR')},00 sin interés con 💳
+                      </span>
+                    </div>
+                  )}
                 </div>
               </Link>
             );
