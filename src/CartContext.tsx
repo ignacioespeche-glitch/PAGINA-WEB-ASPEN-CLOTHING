@@ -9,7 +9,7 @@ export interface CartItem {
   talle: string;
   cantidad: number;
   imagen: string;
-  stockMaximo?: number; // Guardamos el stock real para validar acumulados repetidos
+  stockMaximo?: number;
 }
 
 interface CartContextType {
@@ -18,7 +18,7 @@ interface CartContextType {
   totalPrecio: number;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
-  agregarAlCarrito: (item: CartItem, stockReal: number) => void; // Recibe el stock actual de la prenda
+  agregarAlCarrito: (item: CartItem, stockReal: number) => void;
   notificacionPopup: CartItem | null;
   cerrarNotificacion: () => void;
 }
@@ -38,12 +38,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('aspen_cart', JSON.stringify(carrito));
   }, [carrito]);
 
-  // 1. Calculamos el precio base real proveniente de Tienda Nube
-  const precioBaseOriginal = carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
-
-  // 2. MODIFICACIÓN COMERCIAL: totalPrecio ahora exporta el valor con el +20% (Precio de Lista para Tarjetas)
-  // Usamos Math.round para evitar centavos molestos en el total expuesto
-  const totalPrecio = Math.round(precioBaseOriginal * 1.20);
+  // VOLVEMOS AL PRECIO REAL: totalPrecio ahora es el valor neto original de Tienda Nube
+  const totalPrecio = carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
 
   const agregarAlCarrito = (nuevoItem: CartItem, stockReal: number) => {
     setCarrito((prevCart) => {
@@ -55,9 +51,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const copiaCart = [...prevCart];
         const cantidadActualEnCarrito = copiaCart[existeIndex].cantidad;
         
-        // 🔒 CONTROL ESTRICTO: Frenamos la suma si el acumulado supera el stock disponible
         if (cantidadActualEnCarrito + nuevoItem.cantidad > stockReal) {
-          copiaCart[existeIndex].cantidad = stockReal; // Lo clavamos en el tope máximo
+          copiaCart[existeIndex].cantidad = stockReal;
         } else {
           copiaCart[existeIndex].cantidad += nuevoItem.cantidad;
         }
@@ -99,7 +94,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     >
       {children}
       
-      {/* 🔔 PESTAÑA EMERGENTE FLOTANTE SUPERIOR DERECHA */}
       {notificacionPopup && (
         <div className="popup-notificacion-superior">
           <button className="btn-cerrar-popup" onClick={cerrarNotificacion}>×</button>
@@ -114,7 +108,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             <div className="popup-info">
               <h5 className="popup-prenda-titulo">{notificacionPopup.nombre}</h5>
               <p className="popup-prenda-variante">TALLE: {notificacionPopup.talle}</p>
-              {/* Aquí mostramos el precio unitario base de la prenda para que no confunda al agregar */}
               <p className="popup-prenda-detalles">{notificacionPopup.cantidad} x ${notificacionPopup.precio.toLocaleString('es-AR')}</p>
               <span className="popup-tag-exito">¡AGREGADO AL CARRITO!</span>
             </div>

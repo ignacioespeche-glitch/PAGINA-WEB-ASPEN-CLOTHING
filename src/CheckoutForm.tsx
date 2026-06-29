@@ -3,20 +3,19 @@ import { useState } from 'react';
 import { useCart } from './CartContext';
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
-// REEMPLAZÁ CON TU PUBLIC KEY DE MERCADO PAGO
 initMercadoPago('YOUR_PUBLIC_KEY_HERE');
 
 interface CheckoutFormProps {
   onCancelar: () => void;
 }
 
-type MetodoPago = 'tarjeta' | 'transferencia' | 'efectivo';
+type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
 export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
   const { carrito, totalPrecio } = useCart();
   
   const [paso, setPaso] = useState<'datos' | 'pago'>('datos');
-  const [metodoPago, setMetodoPago] = useState<MetodoPago>('tarjeta');
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); // Por defecto efectivo/transferencia para mantener el precio del catálogo
   
   const [email, setEmail] = useState('');
   const [nombre, setNombre] = useState('');
@@ -24,9 +23,11 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
-  const precioConAumento = totalPrecio; 
-  const precioEfectivoTransferencia = Math.round(totalPrecio / 1.2); 
-  const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConAumento : precioEfectivoTransferencia;
+  // NUEVA MATEMÁTICA TRANSPARENTE
+  const precioBaseCatalogo = totalPrecio; // El del catálogo ($70.000)
+  const precioConRecargoTarjeta = Math.round(totalPrecio * 1.20); // Solo sube si elige tarjeta de crédito ($84.000)
+  
+  const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConRecargoTarjeta : precioBaseCatalogo;
 
   const handleProcederAlPago = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +51,6 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
     alert(`¡Pedido de Aspen registrado con éxito! Procesado por método: ${metodoPago.toUpperCase()}. Te enviaremos los detalles.`);
   };
 
-  // Ajustamos la configuración con un tipado permisivo para evitar que TypeScript falle por propiedades opcionales del SDK
   const mercadoPagoCustomization: any = {
     visual: { style: { theme: 'flat' } },
     paymentMethods: {
@@ -102,20 +102,12 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 
-                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', border: '1px solid #000', cursor: 'pointer', backgroundColor: metodoPago === 'tarjeta' ? '#fcfcfc' : '#fff' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <input type="radio" name="payment_method" checked={metodoPago === 'tarjeta'} onChange={() => setMetodoPago('tarjeta')} style={{ accentColor: '#000' }} />
-                    <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px' }}>TARJETA DE CRÉDITO O DÉBITO</span>
-                  </div>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#000', backgroundColor: '#eee', padding: '4px 8px', letterSpacing: '0.5px' }}>3 CUOTAS SIN INTERÉS</span>
-                </label>
-
                 <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', border: '1px solid #000', cursor: 'pointer', backgroundColor: metodoPago === 'transferencia' ? '#fcfcfc' : '#fff' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <input type="radio" name="payment_method" checked={metodoPago === 'transferencia'} onChange={() => setMetodoPago('transferencia')} style={{ accentColor: '#000' }} />
                     <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px' }}>TRANSFERENCIA BANCARIA DIRECTA</span>
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669' }}>-20% DESCUENTO</span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669' }}>PRECIO PROMO CATÁLOGO</span>
                 </label>
 
                 <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', border: '1px solid #000', cursor: 'pointer', backgroundColor: metodoPago === 'efectivo' ? '#fcfcfc' : '#fff' }}>
@@ -123,7 +115,15 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
                     <input type="radio" name="payment_method" checked={metodoPago === 'efectivo'} onChange={() => setMetodoPago('efectivo')} style={{ accentColor: '#000' }} />
                     <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px' }}>EFECTIVO (RAPIPAGO / PAGO FÁCIL)</span>
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669' }}>-20% DESCUENTO</span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669' }}>PRECIO PROMO CATÁLOGO</span>
+                </label>
+
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', border: '1px solid #000', cursor: 'pointer', backgroundColor: metodoPago === 'tarjeta' ? '#fcfcfc' : '#fff' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <input type="radio" name="payment_method" checked={metodoPago === 'tarjeta'} onChange={() => setMetodoPago('tarjeta')} style={{ accentColor: '#000' }} />
+                    <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px' }}>TARJETA DE CRÉDITO o DÉBITO</span>
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#000', backgroundColor: '#eee', padding: '4px 8px', letterSpacing: '0.5px' }}>3 CUOTAS SIN INTERÉS (+20%)</span>
                 </label>
 
               </div>
@@ -132,7 +132,7 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
                 {metodoPago === 'tarjeta' && (
                   <div className="mercadopago-brick-container">
                     <Payment
-                      initialization={{ amount: precioConAumento, preferenceId: undefined }}
+                      initialization={{ amount: precioConRecargoTarjeta, preferenceId: undefined }}
                       customization={mercadoPagoCustomization}
                       onSubmit={handlePaymentSubmit}
                     />
@@ -145,7 +145,7 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
                     <p style={{ margin: 0 }}><strong>BANCO:</strong> Galicia</p>
                     <p style={{ margin: 0 }}><strong>ALIAS:</strong> aspen.clothing.mp</p>
                     <p style={{ margin: 0 }}><strong>TITULAR:</strong> Aspen Clothing S.A.</p>
-                    <p style={{ margin: '10px 0 0 0', color: '#555', fontSize: '11px' }}>* Por favor, transferí el monto exacto de <strong>${precioEfectivoTransferencia.toLocaleString('es-AR')},00</strong> y luego presioná el botón de abajo para que registremos tu orden.</p>
+                    <p style={{ margin: '10px 0 0 0', color: '#555', fontSize: '11px' }}>* Por favor, transferí el monto exacto de <strong>${precioBaseCatalogo.toLocaleString('es-AR')},00</strong> y luego presioná el botón de abajo para registrar tu pedido.</p>
                     <button type="button" onClick={handleFinalizarPedidoDirecto} style={{ background: '#000', color: '#fff', border: 'none', padding: '14px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px', cursor: 'pointer', marginTop: '15px', textTransform: 'uppercase' }}>
                       CONFIRMAR TRANSFERENCIA REALIZADA
                     </button>
@@ -155,7 +155,7 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
                 {metodoPago === 'efectivo' && (
                   <div style={{ padding: '24px', border: '1px solid #000', backgroundColor: '#FAFAFA', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <p style={{ margin: 0, fontWeight: 700 }}>PAGO EN SUCURSAL:</p>
-                    <p style={{ margin: 0 }}>Al confirmar el pedido, te generaremos el cupón correspondiente para abonar <strong>${precioEfectivoTransferencia.toLocaleString('es-AR')},00</strong> en cualquier Rapipago o Pago Fácil del país.</p>
+                    <p style={{ margin: 0 }}>Al confirmar el pedido, te generaremos el cupón correspondiente para abonar <strong>${precioBaseCatalogo.toLocaleString('es-AR')},00</strong> en cualquier Rapipago o Pago Fácil del país.</p>
                     <button type="button" onClick={handleFinalizarPedidoDirecto} style={{ background: '#000', color: '#fff', border: 'none', padding: '14px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px', cursor: 'pointer', marginTop: '15px', textTransform: 'uppercase' }}>
                       GENERAR CUPÓN Y FINALIZAR ORDEN
                     </button>
@@ -174,8 +174,8 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '25px', borderBottom: '1px solid #000', paddingBottom: '25px' }}>
             {carrito.map((item, index) => {
-              const precioIndividualConAumento = Math.round(item.precio * 1.20);
-              const precioAMostrarPorItem = metodoPago === 'tarjeta' ? precioIndividualConAumento : item.precio;
+              const precioIndividualConRecargo = Math.round(item.precio * 1.20);
+              const precioAMostrarPorItem = metodoPago === 'tarjeta' ? precioIndividualConRecargo : item.precio;
 
               return (
                 <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between', fontSize: '12px' }}>
@@ -199,7 +199,7 @@ export const CheckoutForm = ({ onCancelar }: CheckoutFormProps) => {
             </div>
             {metodoPago === 'tarjeta' && (
               <span style={{ fontSize: '11px', color: '#555', fontStyle: 'italic', alignSelf: 'flex-end' }}>
-                O hasta 3 cuotas sin interés de ${(Math.round(precioConAumento / 3)).toLocaleString('es-AR')},00
+                O 3 cuotas sin interés de ${(Math.round(precioConRecargoTarjeta / 3)).toLocaleString('es-AR')},00
               </span>
             )}
           </div>
