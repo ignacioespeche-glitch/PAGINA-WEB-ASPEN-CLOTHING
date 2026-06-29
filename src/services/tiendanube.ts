@@ -70,7 +70,6 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
           : []
       }));
     }
-
     return [];
   } catch (error) {
     console.error("Error de conexión con la API de Tiendanube:", error);
@@ -107,14 +106,12 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
     }
 
     const data = await response.json();
-    
     if (Array.isArray(data)) {
       return data.map((rate: any) => ({
         name: rate.name,
         price: parseFloat(rate.price)
       }));
     }
-    
     return [];
   } catch (error) {
     console.error("Error conectando con la calculadora de Tiendanube:", error);
@@ -141,12 +138,9 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
       }
     });
 
-    if (!response.ok) {
-      return cuponesLocales[codigoLimpio] || null;
-    }
+    if (!response.ok) return cuponesLocales[codigoLimpio] || null;
 
     const cupones = await response.json();
-    
     if (Array.isArray(cupones)) {
       const cuponEncontrado = cupones.find(
         (c: any) => c.code && c.code.trim().toUpperCase() === codigoLimpio
@@ -166,8 +160,14 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// 💰 NUEVA FUNCIÓN: Manda la orden con nombre, dirección y artículos directo a las ventas de Tiendanube
-export const crearOrdenTiendanube = async (datosCliente: any, carrito: any[], metodoPago: string, cupon: CuponDescuento | null): Promise<boolean> => {
+// Conexión real de datos de pago con la API de órdenes de Tiendanube
+export const crearOrdenTiendanube = async (
+  datosCliente: any, 
+  carrito: any[], 
+  metodoPago: string, 
+  cupon: CuponDescuento | null,
+  datosTarjeta?: { marca: string; ultimosCuatro: string }
+): Promise<boolean> => {
   try {
     const payload = {
       contact_email: datosCliente.email,
@@ -178,13 +178,18 @@ export const crearOrdenTiendanube = async (datosCliente: any, carrito: any[], me
         city: datosCliente.localidad,
         country: 'AR'
       },
-      // Pasamos los productos mapeados como variantes de Tiendanube
       products: carrito.map(item => ({
         variant_id: item.variantId,
         quantity: item.cantidad
       })),
       payment_method: metodoPago,
-      coupon_code: cupon ? cupon.codigo : undefined
+      coupon_code: cupon ? cupon.codigo : undefined,
+      // Inyectamos la información del procesamiento de tarjeta de forma estructurada
+      gateway_name: datosTarjeta ? `Nativo (${datosTarjeta.marca.toUpperCase()})` : undefined,
+      payment_details: datosTarjeta ? {
+        brand: datosTarjeta.marca,
+        last_four_digits: datosTarjeta.ultimosCuatro
+      } : undefined
     };
 
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {

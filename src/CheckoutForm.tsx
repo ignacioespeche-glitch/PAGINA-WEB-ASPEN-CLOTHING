@@ -17,7 +17,7 @@ export const CheckoutForm = () => {
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
-  // Estados locales para el maquetado nativo de la tarjeta
+  // Estados locales para la tarjeta
   const [numeroTarjeta, setNumeroTarjeta] = useState('');
   const [vencimientoTarjeta, setVencimientoTarjeta] = useState('');
   const [cvvTarjeta, setCvvTarjeta] = useState('');
@@ -27,6 +27,22 @@ export const CheckoutForm = () => {
   const [cuponInput, setCuponInput] = useState('');
   const [cuponAplicado, setCuponAplicado] = useState<CuponDescuento | null>(null);
   const [errorCupon, setErrorCupon] = useState('');
+
+  // Función para detectar de forma analítica si es Visa o Mastercard
+  const obtenerMarcaTarjeta = (numero: string) => {
+    const limpio = numero.replace(/\s+/g, '');
+    if (limpio.startsWith('4')) return 'Visa';
+    
+    const prefijoDos = parseInt(limpio.substring(0, 2), 10);
+    const prefijoCuatro = parseInt(limpio.substring(0, 4), 10);
+    
+    if ((prefijoDos >= 51 && prefijoDos <= 55) || (prefijoCuatro >= 2221 && prefijoCuatro <= 2720)) {
+      return 'Mastercard';
+    }
+    return '';
+  };
+
+  const marcaDetectada = obtenerMarcaTarjeta(numeroTarjeta);
 
   // Lógica matemática del carro y beneficios
   let descuentoCalculado = 0;
@@ -48,7 +64,7 @@ export const CheckoutForm = () => {
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
     
-    const mensaje = `Hola Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
+    const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -66,7 +82,6 @@ export const CheckoutForm = () => {
     }
   };
 
-  // CONTROLADOR UNIFICADO DE PAGO: Procesa la orden y la guarda en Tiendanube
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -75,23 +90,31 @@ export const CheckoutForm = () => {
       return;
     }
 
-    if (metodoPago === 'tarjeta' && (!numeroTarjeta || !vencimientoTarjeta || !cvvTarjeta || !nombreTarjeta)) {
-      alert("Por favor completa todos los datos de tu tarjeta de crédito.");
-      return;
+    let datosTarjetaPayload = undefined;
+    if (metodoPago === 'tarjeta') {
+      if (!numeroTarjeta || !vencimientoTarjeta || !cvvTarjeta || !nombreTarjeta) {
+        alert("Por favor completa todos los datos de tu tarjeta de crédito.");
+        return;
+      }
+      
+      const tarjetaLimpia = numeroTarjeta.replace(/\s+/g, '');
+      datosTarjetaPayload = {
+        marca: marcaDetectada || 'Desconocida',
+        ultimosCuatro: tarjetaLimpia.substring(tarjetaLimpia.length - 4)
+      };
     }
 
-    // Sincronizamos la venta con Tiendanube primero
+    // Sincronizamos la venta pasándole la marca (Visa/Mastercard) y los últimos 4 dígitos a Tiendanube
     const datosCliente = { email, nombre, telefono, direccion, localidad };
-    const ordenGuardada = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado);
+    const ordenGuardada = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
     if (!ordenGuardada) {
       alert("Tuvimos un problema al sincronizar la venta con Tiendanube. Por favor intenta nuevamente.");
       return;
     }
 
-    // Comportamiento según el método
     if (metodoPago === 'tarjeta') {
-      alert(`¡Venta con Tarjeta registrada con éxito en Tiendanube por $${montoFinalAMostrar.toLocaleString('es-AR')},00! Procesando cobro...`);
+      alert(`¡Venta con Tarjeta ${marcaDetectada.toUpperCase()} registrada con éxito en el panel de Tiendanube por $${montoFinalAMostrar.toLocaleString('es-AR')},00!`);
     } else if (metodoPago === 'efectivo') {
       window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
     } else {
@@ -150,15 +173,15 @@ export const CheckoutForm = () => {
               </label>
             </div>
 
-            {/* Despliegue dinámico de información de pasarelas */}
             <div style={{ marginTop: '4px' }}>
               {metodoPago === 'tarjeta' && (
                 <div style={{ border: '1px solid #000', padding: '24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '4px' }}>
                     <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.5px' }}>CREDIT CARD</span>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      <span style={{ fontSize: '9px', fontWeight: 700, border: '1px solid #ccc', padding: '2px 6px', color: '#1A458B' }}>VISA</span>
-                      <span style={{ fontSize: '9px', fontWeight: 700, border: '1px solid #ccc', padding: '2px 6px', color: '#EA3435' }}>MC</span>
+                      {/* Las marcas se iluminan de forma dinámica según los números ingresados */}
+                      <span style={{ fontSize: '9px', fontWeight: 700, border: marcaDetectada === 'Visa' ? '2px solid #000' : '1px solid #ccc', padding: '2px 6px', color: '#1A458B', backgroundColor: marcaDetectada === 'Visa' ? '#f0f4ff' : 'transparent' }}>VISA</span>
+                      <span style={{ fontSize: '9px', fontWeight: 700, border: marcaDetectada === 'Mastercard' ? '2px solid #000' : '1px solid #ccc', padding: '2px 6px', color: '#EA3435', backgroundColor: marcaDetectada === 'Mastercard' ? '#fff0f0' : 'transparent' }}>MC</span>
                     </div>
                   </div>
 
