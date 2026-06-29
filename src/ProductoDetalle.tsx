@@ -23,27 +23,22 @@ export const ProductoDetalle = () => {
     return true;
   };
 
-  // 🛠️ BLINDAJE INTELIGENTE: Detecta el talle real analizando el texto, sin importar el orden de las variantes
   const obtenerTalleDeVariante = (variant: any): string | null => {
     if (!variant.options || variant.options.length === 0) return null;
     
-    // Si viene una sola opción en la variante
     if (variant.options.length === 1) {
       return variant.options[0] ? variant.options[0].trim().toUpperCase() : null;
     }
 
-    // Si viene con dos opciones (ej: ["Negro", "XL"] o ["38", "Negro"])
     const op1 = variant.options[0]?.trim().toUpperCase() || '';
     const op2 = variant.options[1]?.trim().toUpperCase() || '';
 
     const palabrasDeColor = ['NEGRO', 'BLANCO', 'GRIS', 'WHITE', 'BLACK', 'GREY', 'CHEETAH', 'MOCCA', 'BEIGE', 'MARRON', 'BLUE', 'AZUL'];
     
-    // Si la primera opción es numérica (ej: 38, 40) o la segunda es un color explícito, el talle está en la primera opción
     if (!isNaN(Number(op1)) || palabrasDeColor.includes(op2)) {
       return op1;
     }
     
-    // Por descarte o por estructura estándar de Tiendanube (Color / Talle), el talle está en la segunda opción
     return op2 || op1;
   };
 
@@ -82,7 +77,6 @@ export const ProductoDetalle = () => {
 
           setTalleElegido(primerTalleConStock || talles[0] || '');
         } else {
-          // MOCK DE PRUEBA (ID 999)
           setProducto({
             id: 999,
             name: { es: 'STRADA LOW CHEETAH // BLACK' },
@@ -124,6 +118,10 @@ export const ProductoDetalle = () => {
 
   const priceString = varianteReal?.price || '0';
   const precioNumerico = parseFloat(priceString);
+
+  // NUEVA MATEMÁTICA INTERNA PARA EL DETALLE INDIVIDUAL
+  const precioListaConAumento = Math.round(precioNumerico * 1.20);
+  const valorCuota = Math.round(precioListaConAumento / 3);
 
   const esPrendaForzada = requiereTallesCompletos(producto.name?.es || '') && (!producto.variants || producto.variants.length <= 1);
   const stockMostrar = (varianteReal?.stock === 0) ? 0 : (esPrendaForzada ? 5 : (varianteReal?.stock ?? 0));
@@ -188,7 +186,19 @@ export const ProductoDetalle = () => {
       {/* DETALLES DE INFORMACIÓN */}
       <div className="detalle-info-seccion">
         <h1 className="detalle-titulo">{producto.name?.es || 'ASPEN ITEM'}</h1>
-        <p className="detalle-precio">${precioNumerico.toLocaleString('es-AR')} ARS</p>
+        
+        {/* MODIFICACIÓN: Desglose completo de precios idéntico a Moscú Showroom */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', margin: '15px 0 25px 0', fontFamily: 'Inter, sans-serif' }}>
+          <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through' }}>
+            ${precioListaConAumento.toLocaleString('es-AR')},00 ARS
+          </span>
+          <strong style={{ fontSize: '16px', color: '#059669', fontWeight: 700, letterSpacing: '0.3px' }}>
+            ${precioNumerico.toLocaleString('es-AR')},00 por Transferencia
+          </strong>
+          <span style={{ fontSize: '13px', color: '#000', fontWeight: 500, letterSpacing: '0.2px' }}>
+            3 cuotas de ${valorCuota.toLocaleString('es-AR')},00 sin interés con 💳
+          </span>
+        </div>
 
         <div className="detalle-bloque-talles">
           <p className="talle-label">TALLE: <span>{(talleElegido || '').toUpperCase()}</span></p>
