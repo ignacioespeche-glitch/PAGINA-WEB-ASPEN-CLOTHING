@@ -5,7 +5,6 @@ import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
 initMercadoPago('YOUR_PUBLIC_KEY_HERE');
 
-// CORRECCIÓN: Se restituye el tipo de datos para el control de la grilla de pagos
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
 export const CheckoutForm = () => {
@@ -56,7 +55,8 @@ export const CheckoutForm = () => {
   };
 
   return (
-    <div className="checkout-container" style={{ padding: '40px max(4vw, 20px)', minHeight: '80vh', fontFamily: 'Inter, sans-serif' }}>
+    // CORRECCIÓN: Se agrega padding-top de 140px para empujar todo el bloque abajo del header fijo
+    <div className="checkout-container" style={{ padding: '140px max(4vw, 20px) 40px max(4vw, 20px)', minHeight: '80vh', fontFamily: 'Inter, sans-serif' }}>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '80px', alignItems: 'start' }}>
         
