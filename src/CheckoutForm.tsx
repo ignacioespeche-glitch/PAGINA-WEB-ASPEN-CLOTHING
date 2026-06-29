@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { useCart } from './CartContext';
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
+// CORRECCIÓN: Agregamos "type" para cumplir con verbatimModuleSyntax
+import { validarCuponTiendanube, type CuponDescuento } from './services/tiendanube';
 
 initMercadoPago('YOUR_PUBLIC_KEY_HERE');
 
@@ -19,10 +21,39 @@ export const CheckoutForm = () => {
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
-  const precioBaseCatalogo = totalPrecio; 
-  const precioConRecargoTarjeta = Math.round(totalPrecio * 1.20); 
+  const [cuponInput, setCuponInput] = useState('');
+  const [cuponAplicado, setCuponAplicado] = useState<CuponDescuento | null>(null);
+  const [errorCupon, setErrorCupon] = useState('');
+
+  let descuentoCalculado = 0;
+  if (cuponAplicado) {
+    if (cuponAplicado.tipo === 'percentage') {
+      descuentoCalculado = Math.round(totalPrecio * (cuponAplicado.valor / 100));
+    } else {
+      descuentoCalculado = cuponAplicado.valor;
+    }
+  }
+
+  const subtotalConDescuento = Math.max(0, totalPrecio - descuentoCalculado);
+  
+  const precioBaseCatalogo = subtotalConDescuento;
+  const precioConRecargoTarjeta = Math.round(subtotalConDescuento * 1.20); 
   
   const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConRecargoTarjeta : precioBaseCatalogo;
+
+  const handleAplicarCupon = async () => {
+    setErrorCupon('');
+    if (!cuponInput.trim()) return;
+
+    const resultado = await validarCuponTiendanube(cuponInput);
+    if (resultado) {
+      setCuponAplicado(resultado);
+      setErrorCupon('');
+    } else {
+      setCuponAplicado(null);
+      setErrorCupon('CÓDIGO INEXISTENTE O INACTIVO');
+    }
+  };
 
   const handleProcederAlPago = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +86,6 @@ export const CheckoutForm = () => {
   };
 
   return (
-    // CORRECCIÓN: Se agrega padding-top de 140px para empujar todo el bloque abajo del header fijo
     <div className="checkout-container" style={{ padding: '140px max(4vw, 20px) 40px max(4vw, 20px)', minHeight: '80vh', fontFamily: 'Inter, sans-serif' }}>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '80px', alignItems: 'start' }}>
@@ -161,7 +191,7 @@ export const CheckoutForm = () => {
             RESUMEN DEL PEDIDO ({carrito.reduce((acc, item) => acc + item.cantidad, 0)})
           </h3>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '25px', borderBottom: '1px solid #000', paddingBottom: '25px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '25px', borderBottom: '1px solid #EFEFEF', paddingBottom: '25px' }}>
             {carrito.map((item, index) => {
               const precioIndividualConRecargo = Math.round(item.precio * 1.20);
               const precioAMostrarPorItem = metodoPago === 'tarjeta' ? precioIndividualConRecargo : item.precio;
@@ -181,13 +211,58 @@ export const CheckoutForm = () => {
             })}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px' }}>
+          {/* SECCIÓN CUPÓN DE DESCUENTO */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '25px', borderBottom: '1px solid #EFEFEF', paddingBottom: '25px' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <input 
+                type="text" 
+                placeholder="GIFT CARD OR DISCOUNT CODE" 
+                value={cuponInput} 
+                onChange={(e) => setCuponInput(e.target.value)} 
+                style={{ flex: 1, padding: '12px', border: '1px solid #000', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', outline: 'none' }}
+              />
+              <button 
+                type="button" 
+                onClick={handleAplicarCupon} 
+                style={{ background: '#000', color: '#fff', border: 'none', padding: '0 24px', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', cursor: 'pointer', textTransform: 'uppercase' }}
+              >
+                APPLY
+              </button>
+            </div>
+            
+            {cuponAplicado && (
+              <span style={{ fontSize: '10px', fontWeight: 700, color: '#059669', letterSpacing: '0.5px' }}>
+                ✓ CUPÓN {cuponAplicado.codigo} APLICADO ({cuponAplicado.tipo === 'percentage' ? `${cuponAplicado.valor}% OFF` : `$${cuponAplicado.valor.toLocaleString('es-AR')} OFF`})
+              </span>
+            )}
+            {errorCupon && (
+              <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626', letterSpacing: '0.5px' }}>
+                ✕ {errorCupon}
+              </span>
+            )}
+          </div>
+
+          {/* DESGLOSE FINAL DE MONTOS */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#555' }}>
+              <span>SUBTOTAL:</span>
+              <span>${totalPrecio.toLocaleString('es-AR')},00</span>
+            </div>
+            
+            {descuentoCalculado > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#059669', fontWeight: 600 }}>
+                <span>DESCUENTO:</span>
+                <span>-${descuentoCalculado.toLocaleString('es-AR')},00</span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', borderTop: '1px solid #000', paddingTop: '14px' }}>
               <span>TOTAL NETO:</span>
               <span>${montoFinalAMostrar.toLocaleString('es-AR')},00</span>
             </div>
+            
             {metodoPago === 'tarjeta' && (
-              <span style={{ fontSize: '11px', color: '#555', fontStyle: 'italic', alignSelf: 'flex-end' }}>
+              <span style={{ fontSize: '11px', color: '#555', fontStyle: 'italic', alignSelf: 'flex-end', marginTop: '-4px' }}>
                 O 3 cuotas sin interés de ${(Math.round(precioConRecargoTarjeta / 3)).toLocaleString('es-AR')},00
               </span>
             )}
