@@ -9,6 +9,7 @@ import { ProductoDetalle } from './ProductoDetalle';
 import { Footer } from './Footer';
 import { CartProvider, useCart } from './CartContext'; 
 import { CartSidebar } from './CartSidebar'; 
+import { CheckoutForm } from './CheckoutForm.tsx'; // Forzamos la extensión explícita para romper el caché de TS
 
 const HeaderNav = ({ busqueda, setBusqueda }: any) => {
   const { carrito, setIsCartOpen } = useCart(); 
@@ -58,15 +59,19 @@ const HeaderNav = ({ busqueda, setBusqueda }: any) => {
   );
 };
 
-function App() {
+function AppContent() {
   const [busqueda, setBusqueda] = useState('');
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   return (
-    <CartProvider>
-      <BrowserRouter>
-        <CartSidebar /> 
-        <HeaderNav busqueda={busqueda} setBusqueda={setBusqueda} />
-        
+    <BrowserRouter>
+      <CartSidebar onIniciarCheckout={() => setIsCheckoutOpen(true)} /> 
+      
+      <HeaderNav busqueda={busqueda} setBusqueda={setBusqueda} />
+      
+      {isCheckoutOpen ? (
+        <CheckoutForm onCancelar={() => setIsCheckoutOpen(false)} />
+      ) : (
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -77,11 +82,19 @@ function App() {
             <Route path="/producto/:id" element={<ProductoDetalle />} />
           </Routes>
         </main>
-        <Footer />
-      </BrowserRouter>
+      )}
+      
+      <Footer />
+    </BrowserRouter>
+  );
+}
+
+function App() {
+  return (
+    <CartProvider>
+      <AppContent />
     </CartProvider>
   );
 }
 
-// 🔒 BLINDAJE ABSOLUTO: El export default que le sana la vida al main.tsx
 export default App;

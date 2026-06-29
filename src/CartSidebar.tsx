@@ -3,7 +3,12 @@ import { useState, useEffect } from 'react';
 import { useCart } from './CartContext';
 import { obtenerProductos, calcularEnvioReal, type TiendanubeProducto, type OpcionEnvio } from './services/tiendanube';
 
-export const CartSidebar = () => {
+// Definimos la interfaz para que TypeScript acepte la función que abre el checkout
+interface CartSidebarProps {
+  onIniciarCheckout: () => void;
+}
+
+export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
   const { carrito, removerDelCarrito, agregarAlCarrito, totalPrecio, isCartOpen, setIsCartOpen } = useCart();
 
   const [productosReales, setProductosReales] = useState<TiendanubeProducto[]>([]);
@@ -83,10 +88,11 @@ export const CartSidebar = () => {
     }
   };
 
+  // Lógica limpia: ya no redirige hacia afuera, ejecuta la prop y cierra el sidebar
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
-    // Redirección directa al carrito general usando tu subdominio operativo
-    window.location.href = `https://tienda.aspenclothing.com.ar/carrito/`;
+    setIsCartOpen(false); 
+    onIniciarCheckout();   
   };
 
   const handleRestarCantidad = (item: any) => {
@@ -125,7 +131,7 @@ export const CartSidebar = () => {
 
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div className="cart-item-fila-superior" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#000000' }}>{item.nombre} ({item.talle})</p>
+                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#000' }}>{item.nombre} ({item.talle})</p>
                         <button className="btn-borrar-item-nuevo" onClick={() => removerDelCarrito(item.id, item.talle)}>Borrar</button>
                       </div>
                       
@@ -135,7 +141,7 @@ export const CartSidebar = () => {
                           <span>{item.cantidad}</span>
                           <button onClick={() => handleSumarCantidad(item)} disabled={item.cantidad >= (item.stockMaximo || 99)}>+</button>
                         </div>
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#000000', letterSpacing: '0.5px' }}>${(item.precio * item.cantidad).toLocaleString('es-AR')},00</p>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#000', letterSpacing: '0.5px' }}>${(item.precio * item.cantidad).toLocaleString('es-AR')},00</p>
                       </div>
                     </div>
 

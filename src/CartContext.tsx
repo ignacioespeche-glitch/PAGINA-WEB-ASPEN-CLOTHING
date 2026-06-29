@@ -38,7 +38,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('aspen_cart', JSON.stringify(carrito));
   }, [carrito]);
 
-  const totalPrecio = carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+  // 1. Calculamos el precio base real proveniente de Tienda Nube
+  const precioBaseOriginal = carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+
+  // 2. MODIFICACIÓN COMERCIAL: totalPrecio ahora exporta el valor con el +20% (Precio de Lista para Tarjetas)
+  // Usamos Math.round para evitar centavos molestos en el total expuesto
+  const totalPrecio = Math.round(precioBaseOriginal * 1.20);
 
   const agregarAlCarrito = (nuevoItem: CartItem, stockReal: number) => {
     setCarrito((prevCart) => {
@@ -109,6 +114,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             <div className="popup-info">
               <h5 className="popup-prenda-titulo">{notificacionPopup.nombre}</h5>
               <p className="popup-prenda-variante">TALLE: {notificacionPopup.talle}</p>
+              {/* Aquí mostramos el precio unitario base de la prenda para que no confunda al agregar */}
               <p className="popup-prenda-detalles">{notificacionPopup.cantidad} x ${notificacionPopup.precio.toLocaleString('es-AR')}</p>
               <span className="popup-tag-exito">¡AGREGADO AL CARRITO!</span>
             </div>
