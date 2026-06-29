@@ -19,7 +19,8 @@ export const CheckoutForm = () => {
 
   // Estados locales para la tarjeta
   const [numeroTarjeta, setNumeroTarjeta] = useState('');
-  const [vencimientoTarjeta, setVencimientoTarjeta] = useState('');
+  const [mesVencimiento, setMesVencimiento] = useState('');
+  const [anioVencimiento, setAnioVencimiento] = useState('');
   const [cvvTarjeta, setCvvTarjeta] = useState('');
   const [nombreTarjeta, setNombreTarjeta] = useState('');
 
@@ -28,18 +29,23 @@ export const CheckoutForm = () => {
   const [cuponAplicado, setCuponAplicado] = useState<CuponDescuento | null>(null);
   const [errorCupon, setErrorCupon] = useState('');
 
+  // Generación de arrays para el cuestionario de fecha (Mes: 01-12 / Año: 2026-2036)
+  const meses = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+  const anioActual = new Date().getFullYear(); // 2026
+  const anios = Array.from({ length: 11 }, (_, i) => String(anioActual + i));
+
   // Formateador analítico para espaciar el número cada 4 dígitos
   const handleNumeroTarjetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/\D/g, ''); // Quita todo lo que no sea número
-    const formateado = input.match(/.{1,4}/g)?.join(' ') || ''; // Agrupa de a 4 con espacios
-    if (formateado.length <= 19) { // 16 números + 3 espacios max
+    const input = e.target.value.replace(/\D/g, ''); 
+    const formateado = input.match(/.{1,4}/g)?.join(' ') || ''; 
+    if (formateado.length <= 19) { 
       setNumeroTarjeta(formateado);
     }
   };
 
   // Limitador estricto para el código de seguridad a máximo 3 dígitos
   const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/\D/g, ''); // Solo números
+    const input = e.target.value.replace(/\D/g, ''); 
     if (input.length <= 3) {
       setCvvTarjeta(input);
     }
@@ -109,8 +115,8 @@ export const CheckoutForm = () => {
 
     let datosTarjetaPayload = undefined;
     if (metodoPago === 'tarjeta') {
-      if (!numeroTarjeta || !vencimientoTarjeta || !cvvTarjeta || !nombreTarjeta) {
-        alert("Por favor completa todos los datos de tu tarjeta de crédito.");
+      if (!numeroTarjeta || !mesVencimiento || !anioVencimiento || !cvvTarjeta || !nombreTarjeta) {
+        alert("Por favor completa todos los datos de tu tarjeta de crédito, incluyendo el mes y año de vencimiento.");
         return;
       }
       
@@ -200,7 +206,6 @@ export const CheckoutForm = () => {
                     </div>
                   </div>
 
-                  {/* Número de tarjeta formateado con espacios cada 4 números */}
                   <input 
                     type="text" 
                     placeholder="NÚMERO DE TARJETA" 
@@ -209,18 +214,39 @@ export const CheckoutForm = () => {
                     style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
                   />
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {/* Fila de Vencimiento Estilo Cuestionario Desplegable y Código de Seguridad */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
+                    
+                    {/* Contenedor del Cuestionario de Vencimiento Separado */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', border: '1px solid #000', padding: '6px 10px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>MES</span>
+                        <select 
+                          value={mesVencimiento} 
+                          onChange={(e) => setMesVencimiento(e.target.value)}
+                          style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '11px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', padding: '4px 0' }}
+                        >
+                          <option value="">--</option>
+                          {meses.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid #eee', paddingLeft: '8px' }}>
+                        <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>AÑO</span>
+                        <select 
+                          value={anioVencimiento} 
+                          onChange={(e) => setAnioVencimiento(e.target.value)}
+                          style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '11px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', padding: '4px 0' }}
+                        >
+                          <option value="">----</option>
+                          {anios.map(a => <option key={a} value={a}>{a}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
                     <input 
                       type="text" 
-                      placeholder="VENCIMIENTO (MM / AA)" 
-                      value={vencimientoTarjeta} 
-                      onChange={(e) => setVencimientoTarjeta(e.target.value)} 
-                      style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
-                    />
-                    {/* Código de seguridad visible y limitado a 3 caracteres máximo */}
-                    <input 
-                      type="text" 
-                      placeholder="CÓDIGO DE SEGURIDAD" 
+                      placeholder="CÓDIGO SEG." 
                       value={cvvTarjeta} 
                       onChange={handleCvvChange} 
                       style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} 
