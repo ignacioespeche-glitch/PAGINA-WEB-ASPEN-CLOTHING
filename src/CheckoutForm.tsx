@@ -105,6 +105,7 @@ export const CheckoutForm = () => {
     }
   };
 
+  // CONTROLADOR UNIFICADO DE PAGO: Auditoría interna y procesamiento
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -127,12 +128,19 @@ export const CheckoutForm = () => {
       };
     }
 
+    // 🔍 AUDITORÍA EN CONSOLA (F12)
+    console.log("=== DATOS DE COMPRA CAPTURADOS ===", {
+      cliente: { email, nombre, telefono, direccion, localidad },
+      carrito: carrito,
+      metodoPago: metodoPago,
+      cupon: cuponAplicado,
+      tarjeta: metodoPago === 'tarjeta' ? datosTarjetaPayload : 'No aplica',
+      montoFinal: montoFinalAMostrar
+    });
+
     const datosCliente = { email, nombre, telefono, direccion, localidad };
-    
-    // Ejecutamos la llamada y capturamos de manera segura el resultado
     const ordenGuardada = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
-    // BLINDAJE ANTI-BLOQUEO: Si la API externa falla, hacemos bypass local para que la experiencia fluya
     if (!ordenGuardada) {
       console.warn("API de Tiendanube restringida para creación externa de órdenes. Activando fallback local exitoso.");
     }
@@ -217,8 +225,6 @@ export const CheckoutForm = () => {
                   />
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
-                    
-                    {/* Cuestionario Desplegable ampliado de manera prolija hasta 2070 */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', border: '1px solid #000', padding: '6px 10px', alignItems: 'center' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>MES</span>
