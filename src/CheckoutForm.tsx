@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useCart } from './CartContext';
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
-// CORRECCIÓN: Agregamos "type" para cumplir con verbatimModuleSyntax
 import { validarCuponTiendanube, type CuponDescuento } from './services/tiendanube';
 
 initMercadoPago('YOUR_PUBLIC_KEY_HERE');
@@ -185,13 +184,13 @@ export const CheckoutForm = () => {
           )}
         </div>
 
-        {/* COLUMNA DERECHA */}
-        <div style={{ background: '#FBFBFB', padding: '35px', border: '1px solid #EFEFEF' }}>
+        {/* COLUMNA DERECHA (CORREGIDA: Sin recuadro blanco ni bordes, totalmente fundida en el gris de fondo) */}
+        <div style={{ background: 'transparent', padding: '35px 0 max(4vw, 20px) 0', border: 'none' }}>
           <h3 style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '25px', color: '#000' }}>
             RESUMEN DEL PEDIDO ({carrito.reduce((acc, item) => acc + item.cantidad, 0)})
           </h3>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '25px', borderBottom: '1px solid #EFEFEF', paddingBottom: '25px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '25px', borderBottom: '1px solid #000', paddingBottom: '25px' }}>
             {carrito.map((item, index) => {
               const precioIndividualConRecargo = Math.round(item.precio * 1.20);
               const precioAMostrarPorItem = metodoPago === 'tarjeta' ? precioIndividualConRecargo : item.precio;
@@ -212,14 +211,14 @@ export const CheckoutForm = () => {
           </div>
 
           {/* SECCIÓN CUPÓN DE DESCUENTO */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '25px', borderBottom: '1px solid #EFEFEF', paddingBottom: '25px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '25px', borderBottom: '1px solid #000', paddingBottom: '25px' }}>
             <div style={{ display: 'flex', gap: '10px' }}>
               <input 
                 type="text" 
                 placeholder="GIFT CARD OR DISCOUNT CODE" 
                 value={cuponInput} 
                 onChange={(e) => setCuponInput(e.target.value)} 
-                style={{ flex: 1, padding: '12px', border: '1px solid #000', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', outline: 'none' }}
+                style={{ flex: 1, padding: '12px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', outline: 'none' }}
               />
               <button 
                 type="button" 
@@ -244,7 +243,7 @@ export const CheckoutForm = () => {
 
           {/* DESGLOSE FINAL DE MONTOS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#555' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#000', fontWeight: 500 }}>
               <span>SUBTOTAL:</span>
               <span>${totalPrecio.toLocaleString('es-AR')},00</span>
             </div>
