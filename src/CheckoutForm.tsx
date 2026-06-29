@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useCart } from './CartContext';
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
-import { validarCuponTiendanube, type CuponDescuento } from './services/tiendanube';
+import { validarCuponTiendanube, crearOrdenTiendanube, type CuponDescuento } from './services/tiendanube';
 
 initMercadoPago('YOUR_PUBLIC_KEY_HERE');
 
@@ -13,19 +13,16 @@ export const CheckoutForm = () => {
   
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); 
   
-  // Campos de datos obligatorios
   const [email, setEmail] = useState('');
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
-  // Estados del sistema de cupones
   const [cuponInput, setCuponInput] = useState('');
   const [cuponAplicado, setCuponAplicado] = useState<CuponDescuento | null>(null);
   const [errorCupon, setErrorCupon] = useState('');
 
-  // Lógica matemática del carro y beneficios
   let descuentoCalculado = 0;
   if (cuponAplicado) {
     if (cuponAplicado.tipo === 'percentage') {
@@ -36,20 +33,16 @@ export const CheckoutForm = () => {
   }
 
   const subtotalConDescuento = Math.max(0, totalPrecio - descuentoCalculado);
-  
   const precioBaseCatalogo = subtotalConDescuento;
   const precioConRecargoTarjeta = Math.round(subtotalConDescuento * 1.20); 
-  
   const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConRecargoTarjeta : precioBaseCatalogo;
 
-  // Generación del link de WhatsApp dinámico con el número 542612515727
   const obtenerLinkWhatsAppEfectivo = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
     
     const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
-    
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -67,7 +60,8 @@ export const CheckoutForm = () => {
     }
   };
 
-  const handlePagarAhoraSubmit = (e: React.FormEvent) => {
+  // CONTROLADOR UNIFICADO: Guarda los datos de la venta primero en Tiendanube
+  const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !nombre || !direccion) {
@@ -75,12 +69,22 @@ export const CheckoutForm = () => {
       return;
     }
 
+    // 1. Enviamos la información de la venta a Tiendanube de manera síncrona antes de salir de la app
+    const datosCliente = { email, nombre, telefono, direccion, localidad };
+    const ordenGuardada = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado);
+
+    if (!ordenGuardada) {
+      alert("Tuvimos un problema al sincronizar la venta con Tiendanube. Por favor intenta nuevamente.");
+      return;
+    }
+
+    // 2. Si se guardó con éxito en el panel de Ventas, ejecutamos la acción del medio de pago elegido
     if (metodoPago === 'tarjeta') {
       alert("Por favor, completá los datos de tu tarjeta en el módulo de Mercado Pago abajo y presioná el botón de la pasarela.");
     } else if (metodoPago === 'efectivo') {
       window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
     } else {
-      alert(`¡Pedido de Aspen registrado con éxito! Procesado por método: ${metodoPago.toUpperCase()}. Te enviaremos los detalles de tu orden.`);
+      alert(`¡Pedido registrado con éxito en tu panel de Tiendanube! Te enviaremos los detalles para coordinar la transferencia.`);
     }
   };
 
@@ -103,7 +107,6 @@ export const CheckoutForm = () => {
 
   return (
     <div className="checkout-container" style={{ padding: '140px max(4vw, 20px) 40px max(4vw, 20px)', minHeight: '80vh', fontFamily: 'Inter, sans-serif' }}>
-      
       <form onSubmit={handlePagarAhoraSubmit} style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '80px', alignItems: 'start' }}>
         
         {/* COLUMNA IZQUIERDA CONTINUA */}
@@ -114,7 +117,6 @@ export const CheckoutForm = () => {
             <h2 style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', borderBottom: '1px solid #000', paddingBottom: '12px', margin: 0 }}>
               1. IDENTIFICACIÓN Y ENVÍO
             </h2>
-            
             <input type="email" placeholder="EMAIL *" required value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
             <input type="text" placeholder="NOMBRE COMPLETO *" required value={nombre} onChange={(e) => setNombre(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
             <input type="text" placeholder="TELÉFONO" value={telefono} onChange={(e) => setTelefono(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
@@ -154,7 +156,6 @@ export const CheckoutForm = () => {
               </label>
             </div>
 
-            {/* Módulos dinámicos informativos */}
             <div style={{ marginTop: '4px' }}>
               {metodoPago === 'tarjeta' && (
                 <div className="mercadopago-brick-container" style={{ border: '1px solid #000', padding: '16px', backgroundColor: '#fff' }}>
@@ -178,24 +179,15 @@ export const CheckoutForm = () => {
 
               {metodoPago === 'efectivo' && (
                 <div style={{ padding: '24px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <p style={{ margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solicitud de Cupón por WhatsApp:</p>
+                  <p style={{ margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solicitud de Cupón de Cobro:</p>
                   <p style={{ margin: 0, color: '#333', lineHeight: '1.6' }}>
-                    Al hacer clic en el botón de abajo, se abrirá un chat directo con nuestro local para pasarte el código de barra o QR de cobro por un total neto de <strong>${precioBaseCatalogo.toLocaleString('es-AR')},00</strong>.
+                    Al hacer clic en el botón negro de abajo, el sistema enviará tu orden y abrirá el canal directo con nuestro local para despacharte el código de barra o QR de cobro por un total neto de <strong>${precioBaseCatalogo.toLocaleString('es-AR')},00</strong>.
                   </p>
-                  <a 
-                    href={obtenerLinkWhatsAppEfectivo()} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={{ color: '#000', fontWeight: 700, textDecoration: 'underline', fontSize: '11px', letterSpacing: '0.5px' }}
-                  >
-                    ¿PREFIERES SOLICITARLO MANUALMENTE? HAGA CLIC AQUÍ
-                  </a>
                 </div>
               )}
             </div>
           </div>
 
-          {/* BOTÓN DEFINITIVO GIGANTE */}
           {metodoPago !== 'tarjeta' && (
             <button 
               type="submit" 
@@ -242,11 +234,7 @@ export const CheckoutForm = () => {
                 onChange={(e) => setCuponInput(e.target.value)} 
                 style={{ flex: 1, padding: '12px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', outline: 'none' }}
               />
-              <button 
-                type="button" 
-                onClick={handleAplicarCupon} 
-                style={{ background: '#000', color: '#fff', border: 'none', padding: '0 24px', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', cursor: 'pointer', textTransform: 'uppercase' }}
-              >
+              <button type="button" onClick={handleAplicarCupon} style={{ background: '#000', color: '#fff', border: 'none', padding: '0 24px', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', cursor: 'pointer', textTransform: 'uppercase' }}>
                 APPLY
               </button>
             </div>

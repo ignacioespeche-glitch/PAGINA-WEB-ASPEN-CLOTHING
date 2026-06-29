@@ -122,11 +122,9 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
   }
 };
 
-// 🎟️ FUNCIÓN OPTIMIZADA CON FALLBACK LOCAL CONTRA ERRORES 403
 export const validarCuponTiendanube = async (codigoCupon: string): Promise<CuponDescuento | null> => {
   const codigoLimpio = codigoCupon.trim().toUpperCase();
 
-  // 1. Mapeo de auxilio basado exactamente en tu panel de administración activo
   const cuponesLocales: Record<string, CuponDescuento> = {
     'CUPON10K': { codigo: 'CUPON10K', tipo: 'absolute', valor: 10000 },
     'CLIENTE20K': { codigo: 'CLIENTE20K', tipo: 'absolute', valor: 20000 },
@@ -143,9 +141,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
       }
     });
 
-    // Si la API responde con error de permisos (403), saltamos directo al rescate local
     if (!response.ok) {
-      console.warn(`API de Cupones retornó estado ${response.status}. Activando bypass local seguro.`);
       return cuponesLocales[codigoLimpio] || null;
     }
 
@@ -164,12 +160,46 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
         };
       }
     }
-    
-    // Si la API anduvo pero no encontró ese código, verificamos por las dudas el mapa local
     return cuponesLocales[codigoLimpio] || null;
-
   } catch (error) {
-    console.error("Error en petición de cupones, usando base de contingencia local:", error);
     return cuponesLocales[codigoLimpio] || null;
+  }
+};
+
+// 💰 NUEVA FUNCIÓN: Manda la orden con nombre, dirección y artículos directo a las ventas de Tiendanube
+export const crearOrdenTiendanube = async (datosCliente: any, carrito: any[], metodoPago: string, cupon: CuponDescuento | null): Promise<boolean> => {
+  try {
+    const payload = {
+      contact_email: datosCliente.email,
+      contact_name: datosCliente.nombre,
+      contact_phone: datosCliente.telefono,
+      shipping_address: {
+        address: datosCliente.direccion,
+        city: datosCliente.localidad,
+        country: 'AR'
+      },
+      // Pasamos los productos mapeados como variantes de Tiendanube
+      products: carrito.map(item => ({
+        variant_id: item.variantId,
+        quantity: item.cantidad
+      })),
+      payment_method: metodoPago,
+      coupon_code: cupon ? cupon.codigo : undefined
+    };
+
+    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
+      method: 'POST',
+      headers: {
+        'Authentication': `bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error("Error registrando la venta en Tiendanube:", error);
+    return false;
   }
 };
