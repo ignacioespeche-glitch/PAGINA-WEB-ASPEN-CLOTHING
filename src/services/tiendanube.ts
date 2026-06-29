@@ -18,14 +18,12 @@ export interface TiendanubeProducto {
   }>;
 }
 
-// Interfaz para recibir las opciones de envío de la API
 export interface OpcionEnvio {
   name: string;
   price: number;
   loading_time?: string;
 }
 
-// Interfaz para el retorno de validación del cupón
 export interface CuponDescuento {
   codigo: string;
   tipo: 'percentage' | 'absolute';
@@ -80,7 +78,6 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   }
 };
 
-// 🚚 Consulta tarifas de envío reales basándose en el CP y los ítems del carro
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
   try {
     const itemsPayload = carrito.map(item => ({
@@ -125,7 +122,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
   }
 };
 
-// 🎟️ NUEVA FUNCIÓN: Valida cupones directamente contra la API de Tiendanube
+// 🎟️ FUNCIÓN CORREGIDA CON BLINDAJE PARA CUPONES ACTIVOS
 export const validarCuponTiendanube = async (codigoCupon: string): Promise<CuponDescuento | null> => {
   try {
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/coupons`, {
@@ -143,18 +140,19 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
     }
 
     const cupones = await response.json();
+    console.log("Cupones crudos recibidos de Tiendanube:", cupones); // Log útil para desarrollo
     
     if (Array.isArray(cupones)) {
-      // Buscamos el cupón que coincida en mayúsculas/minúsculas sin espacios redundantes
       const cuponEncontrado = cupones.find(
-        (c: any) => c.code.trim().toLowerCase() === codigoCupon.trim().toLowerCase()
+        (c: any) => c.code && c.code.trim().toUpperCase() === codigoCupon.trim().toUpperCase()
       );
 
-      // Verificamos si existe, está activo, no fue eliminado y es válido temporalmente
-      if (cuponEncontrado && cuponEncontrado.enabled) {
+      // Verificamos si existe y si coincide con el estado "Activado" que se ve en tu imagen
+      if (cuponEncontrado && (cuponEncontrado.enabled || cuponEncontrado.status === 'active')) {
         return {
           codigo: cuponEncontrado.code.toUpperCase(),
-          tipo: cuponEncontrado.type, // 'percentage' o 'absolute'
+          // Mapea correctamente si es un porcentaje o un valor fijo en pesos ($10000)
+          tipo: cuponEncontrado.type === 'percentage' ? 'percentage' : 'absolute', 
           valor: parseFloat(cuponEncontrado.value)
         };
       }
