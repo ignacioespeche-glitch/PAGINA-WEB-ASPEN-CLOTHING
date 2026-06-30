@@ -77,11 +77,21 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   }
 };
 
+// 🚀 MODIFICACIÓN COMPLETA Y ROBUSTA: Mapea variant_id probando ambas propiedades por seguridad y agrega logs de traza
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
   try {
-    const itemsPayload = carrito.map(item => ({
-      variant_id: item.variantId,
-      quantity: item.cantidad
+    const itemsPayload = carrito.map(item => {
+      // Intentamos con variantId o con id, asegurándonos de que sea un número
+      const vId = item.variantId || item.id;
+      return {
+        variant_id: Number(vId),
+        quantity: Number(item.cantidad || 1)
+      };
+    }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
+
+    console.log("[Shipping Debug] Payload enviado a Tiendanube:", JSON.stringify({
+      destination: { postal_code: codigoPostal.trim(), country: 'AR' },
+      items: itemsPayload
     }));
 
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
@@ -101,11 +111,14 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
     });
 
     if (!response.ok) {
-      console.error("Error al calcular envío en Tiendanube:", response.statusText);
+      const errorText = await response.text();
+      console.error("Error al calcular envío en Tiendanube:", response.status, errorText);
       return [];
     }
 
     const data = await response.json();
+    console.log("[Shipping Debug] Respuesta de Tiendanube:", data);
+
     if (Array.isArray(data)) {
       return data.map((rate: any) => ({
         name: rate.name,
@@ -138,7 +151,6 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
       }
     });
 
-    // 🛠️ TYPO FIX: Cambiado 'codigoLoptio' por 'codigoLimpio' en las tres salidas de error/fallback
     if (!response.ok) return cuponesLocales[codigoLimpio] || null;
 
     const cupones = await response.json();
@@ -174,7 +186,6 @@ export const crearOrdenTiendanube = async (
       console.log(`[Aspen] Detalles de tarjeta: ${datosTarjeta.marca} terminada en ${datosTarjeta.ultimosCuatro}`);
     }
 
-    // 1. Consultamos todo el catálogo para saber dinámicamente a qué productos pertenecen las variantes
     const productsResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products`, {
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -190,14 +201,12 @@ export const crearOrdenTiendanube = async (
 
     const listaProductos = await productsResponse.json();
 
-    // 2. Descontamos el inventario real de cada talle comprado
     for (const item of carrito) {
       const variantId = Number(item.variantId);
       const cantidadComprada = Number(item.cantidad || 1);
 
       if (!variantId) continue;
 
-      // Buscamos dinámicamente en el catálogo local el producto correspondiente a esta variante
       const productoEncontrado = listaProductos.find((p: any) => 
         Array.isArray(p.variants) && p.variants.some((v: any) => Number(v.id) === variantId)
       );
@@ -209,7 +218,6 @@ export const crearOrdenTiendanube = async (
 
       const productoId = productoEncontrado.id;
 
-      // 3. Pegamos a la ruta oficial anidada
       const getResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${productoId}/variants/${variantId}`, {
         method: 'GET',
         headers: {
@@ -226,7 +234,6 @@ export const crearOrdenTiendanube = async (
           const stockActual = Number(variantData.stock);
           const nuevoStock = Math.max(0, stockActual - cantidadComprada);
 
-          // 4. Modificamos el stock mediante PUT oficial
           await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${productoId}/variants/${variantId}`, {
             method: 'PUT',
             headers: {
