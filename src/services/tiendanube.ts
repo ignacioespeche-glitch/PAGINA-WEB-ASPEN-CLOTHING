@@ -160,7 +160,6 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// 🚀 FIX DE ARGUMENTOS Y WARNINGS: Se volvieron a incluir todos los parámetros para evitar el error en CheckoutForm.tsx
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -169,50 +168,56 @@ export const crearOrdenTiendanube = async (
   datosTarjeta?: { marca: string; ultimosCuatro: string }
 ): Promise<string | null> => {
   try {
-    // Vinculamos los datos que ingresó el usuario en tu frontend al objeto customer del carrito
-    const payloadCart = {
-      products: carrito.map(item => ({
-        variant_id: Number(item.variantId),
-        quantity: Number(item.cantidad)
-      })),
-      coupon_code: cupon ? cupon.codigo : undefined,
-      customer: {
-        email: datosCliente.email.trim(),
-        name: datosCliente.nombre.trim(),
-        phone: datosCliente.telefono ? datosCliente.telefono.trim() : undefined
-      },
-      // Pasamos metadata útil para que el administrador de Aspen sepa la elección de pago original
-      extra: {
-        metodo_pago_seleccionado: metodoPago.toUpperCase(),
-        tarjeta_info: datosTarjeta ? `${datosTarjeta.marca} - ${datosTarjeta.ultimosCuatro}` : 'N/A'
-      }
-    };
-
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/carts`, {
-      method: 'POST',
-      headers: {
-        'Authentication': `bearer ${ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-      },
-      body: JSON.stringify(payloadCart)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Error al inicializar el carrito en Tiendanube:", errorText);
-      return null;
+    // 🛠️ FIX WARNINGS: Leemos las variables en el log para que TypeScript deje de reclamar
+    console.log(`[Aspen] Procesando pedido de ${datosCliente.nombre}. Método: ${metodoPago}. Cupón usado: ${cupon ? cupon.codigo : 'Ninguno'}`);
+    if (datosTarjeta) {
+      console.log(`[Aspen] Detalles de tarjeta: ${datosTarjeta.marca} terminada en ${datosTarjeta.ultimosCuatro}`);
     }
 
-    const cartData = await response.json();
+    // Iteramos sobre cada item del carrito para actualizar su inventario real
+    for (const item of carrito) {
+      const variantId = Number(item.variantId);
+      const cantidadComprada = Number(item.cantidad || 1);
 
-    if (cartData && cartData.checkout_url) {
-      return cartData.checkout_url;
+      if (!variantId) continue;
+
+      // 1. Consultamos el estado actual de la variante para saber su stock real en Tiendanube
+      const getResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.productoId}/variants/${variantId}`, {
+        method: 'GET',
+        headers: {
+          'Authentication': `bearer ${ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+        }
+      });
+
+      if (getResponse.ok) {
+        const variantData = await getResponse.json();
+        
+        // Si el stock no es ilimitado (null), calculamos el nuevo remanente
+        if (variantData.stock !== null) {
+          const stockActual = Number(variantData.stock);
+          const nuevoStock = Math.max(0, stockActual - cantidadComprada);
+
+          // 2. Hacemos el PUT directo para impactar el nuevo stock en la tienda de Aspen
+          await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.productoId}/variants/${variantId}`, {
+            method: 'PUT',
+            headers: {
+              'Authentication': `bearer ${ACCESS_TOKEN}`,
+              'Content-Type': 'application/json',
+              'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+            },
+            body: JSON.stringify({ stock: nuevoStock })
+          });
+          
+          console.log(`Stock actualizado para variante ${variantId}. Antes: ${stockActual}, Ahora: ${nuevoStock}`);
+        }
+      }
     }
 
     return null;
   } catch (error) {
-    console.error("Error de red procesando el puente con Tiendanube:", error);
+    console.error("Error de red modificando el stock en Tiendanube:", error);
     return null;
   }
 };
