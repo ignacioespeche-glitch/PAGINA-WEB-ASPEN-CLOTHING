@@ -114,7 +114,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
     }
     return [];
   } catch (error) {
-    console.error("Error conectando con la calculadora de Tiendanube:", error);
+    console.error("Error con la calculadora de Tiendanube:", error);
     return [];
   }
 };
@@ -160,7 +160,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// 🛠️ ACTUALIZACIÓN DE CONEXIÓN REAL CON DESCUENTO DE STOCK INVENTARIO
+// 🛠️ FIX TOTAL DEL PAYLOAD: Cambiado 'items' por 'products' y sanitización de propiedades obligatorias
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -169,37 +169,35 @@ export const crearOrdenTiendanube = async (
   datosTarjeta?: { marca: string; ultimosCuatro: string }
 ): Promise<boolean> => {
   try {
-    // Definimos el estado financiero real para obligar a Tiendanube a procesar el stock
     let estadoFinanciero = 'pending'; 
     let nombrePasarela = 'Transferencia Bancaria / Efectivo';
 
     if (metodoPago === 'tarjeta') {
-      estadoFinanciero = 'paid'; // Tarjeta entra como aprobado automáticamente
+      estadoFinanciero = 'paid';
       nombrePasarela = datosTarjeta ? `Pasarela Nativa (${datosTarjeta.marca.toUpperCase()})` : 'Tarjeta de Crédito';
     }
 
+    // Armamos el payload estructurado de forma estricta según requiere la API v1
     const payload = {
-      contact_email: datosCliente.email,
-      contact_name: datosCliente.nombre,
-      contact_phone: datosCliente.telefono,
+      contact_email: datosCliente.email.trim(),
+      contact_name: datosCliente.nombre.trim(),
+      contact_phone: datosCliente.telefono ? datosCliente.telefono.trim() : undefined,
       shipping_address: {
-        address: datosCliente.direccion,
-        city: datosCliente.localidad,
+        address: datosCliente.direccion.trim(),
+        city: datosCliente.localidad ? datosCliente.localidad.trim() : 'Mendoza',
         country: 'AR',
-        first_name: datosCliente.nombre,
-        last_name: ''
+        first_name: datosCliente.nombre.trim(),
+        last_name: '.'
       },
-      // Mapeamos de forma explícita los line_items que requiere la API v1/v2
-      items: carrito.map(item => ({
+      // 🚨 CAMBIO CLAVE: Cambiado de 'items' a 'products' para resolver el error 400
+      products: carrito.map(item => ({
         variant_id: Number(item.variantId),
         quantity: Number(item.cantidad)
       })),
-      payment_details: {
-        method: metodoPago.toUpperCase(),
-        status: estadoFinanciero
-      },
+      payment_method: metodoPago.toUpperCase(),
+      financial_status: estadoFinanciero,
       gateway: nombrePasarela,
-      coupon: cupon ? { code: cupon.codigo } : undefined
+      coupon_code: cupon ? cupon.codigo : undefined
     };
 
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
@@ -212,9 +210,14 @@ export const crearOrdenTiendanube = async (
       body: JSON.stringify(payload)
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error de validación en respuesta de Tiendanube:", errorText);
+    }
+
     return response.ok;
   } catch (error) {
-    console.error("Error registrando la venta en Tiendanube:", error);
+    console.error("Error de red registrando la venta en Tiendanube:", error);
     return false;
   }
 };
