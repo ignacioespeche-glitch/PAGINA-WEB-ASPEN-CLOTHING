@@ -160,6 +160,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
+// 🚀 FIX DE ENDPOINT: Se cambió el endpoint al mapeo directo de /variants/{id} para evitar la dependencia de productoId en el carrito
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -168,21 +169,20 @@ export const crearOrdenTiendanube = async (
   datosTarjeta?: { marca: string; ultimosCuatro: string }
 ): Promise<string | null> => {
   try {
-    // 🛠️ FIX WARNINGS: Leemos las variables en el log para que TypeScript deje de reclamar
     console.log(`[Aspen] Procesando pedido de ${datosCliente.nombre}. Método: ${metodoPago}. Cupón usado: ${cupon ? cupon.codigo : 'Ninguno'}`);
     if (datosTarjeta) {
       console.log(`[Aspen] Detalles de tarjeta: ${datosTarjeta.marca} terminada en ${datosTarjeta.ultimosCuatro}`);
     }
 
-    // Iteramos sobre cada item del carrito para actualizar su inventario real
+    // Iteramos sobre cada item del carrito
     for (const item of carrito) {
       const variantId = Number(item.variantId);
       const cantidadComprada = Number(item.cantidad || 1);
 
       if (!variantId) continue;
 
-      // 1. Consultamos el estado actual de la variante para saber su stock real en Tiendanube
-      const getResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.productoId}/variants/${variantId}`, {
+      // 🛠️ LLAMADA DIRECTA: Le pegamos directo a la variante sin pasar por /products/{id}/
+      const getResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/variants/${variantId}`, {
         method: 'GET',
         headers: {
           'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -194,13 +194,12 @@ export const crearOrdenTiendanube = async (
       if (getResponse.ok) {
         const variantData = await getResponse.json();
         
-        // Si el stock no es ilimitado (null), calculamos el nuevo remanente
         if (variantData.stock !== null) {
           const stockActual = Number(variantData.stock);
           const nuevoStock = Math.max(0, stockActual - cantidadComprada);
 
-          // 2. Hacemos el PUT directo para impactar el nuevo stock en la tienda de Aspen
-          await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.productoId}/variants/${variantId}`, {
+          // Hacemos el PUT directo para asentar el stock real modificado
+          await fetch(`/api-tiendanube/v1/${STORE_ID}/variants/${variantId}`, {
             method: 'PUT',
             headers: {
               'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -210,8 +209,10 @@ export const crearOrdenTiendanube = async (
             body: JSON.stringify({ stock: nuevoStock })
           });
           
-          console.log(`Stock actualizado para variante ${variantId}. Antes: ${stockActual}, Ahora: ${nuevoStock}`);
+          console.log(`[Stock Aspen] Variante ${variantId} modificada. Stock previo: ${stockActual} -> Nuevo stock: ${nuevoStock}`);
         }
+      } else {
+        console.error(`No se pudo encontrar la variante ${variantId} en Tiendanube.`);
       }
     }
 
