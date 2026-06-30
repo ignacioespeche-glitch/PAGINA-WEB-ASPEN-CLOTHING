@@ -77,7 +77,7 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   }
 };
 
-// 🚀 SOLUCIÓN FINAL: Usamos tu proxy actual de Vite pero corregimos la estructura de la URL quitando el STORE_ID para que la API no devuelva 404
+// 🚀 CÓDIGO DEFINITIVO DE ENVÍOS: Estructura oficial con STORE_ID más payload de origen y destino
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
   try {
     const itemsPayload = carrito.map(item => {
@@ -88,10 +88,10 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       };
     }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
 
-    console.log("[Shipping Debug] Usando proxy de Vite configurado con headers de origen seguros...");
+    console.log("[Shipping Debug] Solicitando cotización a través del proxy de Vite habilitado...");
 
-    // 🛠️ Cambiado a /v1/shipping_rates (sin el ID de la tienda en el medio). Así viaja limpio por tu proxy existente.
-    const response = await fetch(`/api-tiendanube/v1/shipping_rates`, {
+    // Le pegamos a la ruta oficial usando tu proxy de Vite que inyecta Origin y Referer correctamente
+    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -100,7 +100,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       },
       body: JSON.stringify({
         origin: {
-          postal_code: '5500', // Mendoza 
+          postal_code: '5500', // Código postal base de Mendoza
           country: 'AR'
         },
         destination: {
@@ -118,7 +118,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
     }
 
     const data = await response.json();
-    console.log("[Shipping Debug] ¡Respuesta exitosa recibida!", data);
+    console.log("[Shipping Debug] ¡Tarifas obtenidas con éxito!", data);
 
     if (Array.isArray(data)) {
       return data.map((rate: any) => ({
@@ -134,7 +134,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
 };
 
 export const validarCuponTiendanube = async (codigoCupon: string): Promise<CuponDescuento | null> => {
-  const codigoLimpio = codigoCupon.trim().toUpperCase();
+  const codigoLinter = codigoCupon.trim().toUpperCase();
 
   const cuponesLocales: Record<string, CuponDescuento> = {
     'CUPON10K': { codigo: 'CUPON10K', tipo: 'absolute', valor: 10000 },
@@ -152,12 +152,12 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
       }
     });
 
-    if (!response.ok) return cuponesLocales[codigoLimpio] || null;
+    if (!response.ok) return cuponesLocales[codigoLinter] || null;
 
     const cupones = await response.json();
     if (Array.isArray(cupones)) {
       const cuponEncontrado = cupones.find(
-        (c: any) => c.code && c.code.trim().toUpperCase() === codigoLimpio
+        (c: any) => c.code && c.code.trim().toUpperCase() === codigoLinter
       );
 
       if (cuponEncontrado && (cuponEncontrado.enabled || cuponEncontrado.status === 'active')) {
@@ -168,9 +168,9 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
         };
       }
     }
-    return cuponesLocales[codigoLimpio] || null;
+    return cuponesLocales[codigoLinter] || null;
   } catch (error) {
-    return cuponesLocales[codigoLimpio] || null;
+    return cuponesLocales[codigoLinter] || null;
   }
 };
 
