@@ -77,11 +77,10 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   }
 };
 
-// 🚀 MODIFICACIÓN COMPLETA Y ROBUSTA: Mapea variant_id probando ambas propiedades por seguridad y agrega logs de traza
+// 🚀 FIX DEFINITIVO DE URL: Se removió el ${STORE_ID} de la URL porque shipping_rates es un endpoint global de la API v1
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
   try {
     const itemsPayload = carrito.map(item => {
-      // Intentamos con variantId o con id, asegurándonos de que sea un número
       const vId = item.variantId || item.id;
       return {
         variant_id: Number(vId),
@@ -94,7 +93,8 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       items: itemsPayload
     }));
 
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
+    // 🛠️ Cambiado de `/api-tiendanube/v1/${STORE_ID}/shipping_rates` a `/api-tiendanube/v1/shipping_rates`
+    const response = await fetch(`/api-tiendanube/v1/shipping_rates`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
