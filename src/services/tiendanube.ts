@@ -170,140 +170,53 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
+// 🚀 FIX: Se agregaron guiones bajos (_) a los parámetros que no lee el endpoint de Carts para limpiar los warnings de TS
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
-  metodoPago: string, 
-  cupon: CuponDescuento | null,
-  datosTarjeta?: { marca: string; ultimosCuatro: string }
+  _metodoPago: string, 
+  _cupon: CuponDescuento | null,
+  _datosTarjeta?: { marca: string; ultimosCuatro: string }
 ): Promise<string | null> => {
   try {
-    console.log(`[Aspen] Procesando pedido de ${datosCliente.nombre}. Método: ${metodoPago}. Cupón usado: ${cupon ? cupon.codigo : 'Ninguno'}`);
-    if (datosTarjeta) {
-      console.log(`[Aspen] Detalles de tarjeta: ${datosTarjeta.marca} terminada en ${datosTarjeta.ultimosCuatro}`);
-    }
+    console.log(`[Aspen] Inicializando checkout de forma segura vía Carrito para: ${datosCliente.nombre}`);
+    
+    const lineItemsPayload = carrito.map(item => ({
+      variant_id: Number(item.variantId),
+      quantity: Number(item.cantidad || 1)
+    })).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
 
-    // 1. Obtener los productos para verificar y descontar stock localmente en Tiendanube
-    const productsResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products`, {
-      headers: {
-        'Authentication': `bearer ${ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-      }
-    });
-
-    if (!productsResponse.ok) {
-      console.error("No se pudieron consultar los productos de Tiendanube para mapear el stock.");
+    if (lineItemsPayload.length === 0) {
+      console.error("[Aspen] El carrito está vacío o las variantes no son válidas.");
       return null;
     }
 
-    const listaProductos = await productsResponse.json();
-    const lineItemsPayload: any[] = [];
-
-    for (const item of carrito) {
-      const variantId = Number(item.variantId);
-      const cantidadComprada = Number(item.cantidad || 1);
-
-      if (!variantId) continue;
-
-      const productoEncontrado = listaProductos.find((p: any) => 
-        Array.isArray(p.variants) && p.variants.some((v: any) => Number(v.id) === variantId)
-      );
-
-      if (!productoEncontrado) {
-        console.error(`[Error Stock] Variante ${variantId} no mapeada en el catálogo activo.`);
-        continue;
-      }
-
-      const productoId = productoEncontrado.id;
-
-      // Estructuramos el item para la orden final
-      lineItemsPayload.push({
-        variant_id: variantId,
-        quantity: cantidadComprada,
-        price: item.precio.toString(),
-        name: item.nombre
-      });
-
-      // Flujo de descuento de stock nativo vía PUT
-      const getResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${productoId}/variants/${variantId}`, {
-        method: 'GET',
-        headers: {
-          'Authentication': `bearer ${ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-        }
-      });
-
-      if (getResponse.ok) {
-        const variantData = await getResponse.json();
-        if (variantData.stock !== null) {
-          const stockActual = Number(variantData.stock);
-          const nuevoStock = Math.max(0, stockActual - cantidadComprada);
-
-          await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${productoId}/variants/${variantId}`, {
-            method: 'PUT',
-            headers: {
-              'Authentication': `bearer ${ACCESS_TOKEN}`,
-              'Content-Type': 'application/json',
-              'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-            },
-            body: JSON.stringify({ stock: nuevoStock })
-          });
-          
-          console.log(`[Stock Aspen] ¡Éxito! Producto: ${productoId} - Variante: ${variantId}. Stock previo: ${stockActual} -> Nuevo: ${nuevoStock}`);
-        }
-      }
-    }
-
-    // Traemos de forma segura el costo del envío desde el localStorage para mandarlo a la orden
-    const costoEnvioGuardado = Number(localStorage.getItem('aspen_costo_envio')) || 0;
-
-    // 2. 🚀 ALTA REAL DE LA ORDEN EN EL PANEL PRINCIPAL DE TIENDANUBE
-    // Documentación oficial: POST /orders (Genera la venta formal)
-    const orderBody = {
-      contact_email: datosCliente.email,
-      contact_name: datosCliente.nombre,
-      contact_phone: datosCliente.telefono || '',
-      shipping_address: {
-        address: datosCliente.direccion,
-        city: datosCliente.localidad || 'Mendoza',
-        country: 'AR'
-      },
-      payment_status: 'pending',        // Forzamos estado pendiente para que salte a la interfaz de Ventas
-      shipping_status: 'unshipped',      // Marca la orden lista para empaquetar y enviar
-      gateway: metodoPago,               // Guarda el método elegido en tu front ('transferencia', 'tarjeta', 'efectivo')
-      shipping_pickup_type: 'ship',
-      shipping_cost_owner: costoEnvioGuardado.toString(), // Mandamos el costo real calculado al panel
-      products: lineItemsPayload,
-      coupon: cupon ? [{ code: cupon.codigo, type: cupon.tipo, value: cupon.valor.toString() }] : []
+    const cartBody = {
+      items: lineItemsPayload
     };
 
-    const createOrderResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
+    const cartResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/carts`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
       },
-      body: JSON.stringify(orderBody)
+      body: JSON.stringify(cartBody)
     });
 
-    if (createOrderResponse.ok) {
-      const ordenCreada = await createOrderResponse.json();
-      console.log(`[Aspen Venta exitosa] Orden #${ordenCreada.id} impactada correctamente en el panel.`);
-      
-      // Si la API de Tiendanube te da un link de checkout nativo para esa orden lo retornamos,
-      // sino devolvemos null para que procese tu vista local de éxito.
-      return ordenCreada.checkout_url || null;
+    if (cartResponse.ok) {
+      const cartData = await cartResponse.json();
+      console.log(`[Aspen] Carrito creado exitosamente en Tiendanube. URL de Checkout obtenida.`);
+      return cartData.checkout_url || null;
     } else {
-      const errorData = await createOrderResponse.text();
-      console.error("[Error Tiendanube] No se pudo crear la orden en el servidor:", errorData);
+      const errorText = await cartResponse.text();
+      console.error("[Error Pasarela Carritos] Tiendanube rechazó el procesamiento del carro:", errorText);
       return null;
     }
 
   } catch (error) {
-    console.error("Error de red modificando el stock o registrando la orden en Tiendanube:", error);
+    console.error("Error crítico de red procesando la alternativa de carritos en Tiendanube:", error);
     return null;
   }
 };
