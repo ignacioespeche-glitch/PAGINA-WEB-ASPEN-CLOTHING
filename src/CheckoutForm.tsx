@@ -137,7 +137,8 @@ export const CheckoutForm = () => {
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
-    await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
+    // 🚀 MODIFICACIÓN CLAVE: Obtenemos la URL de checkout dinámico generada por el puente del service
+    const urlCheckout = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
     // Vaciado automático en el estado y storage al registrar exitosamente
     if (typeof setCarrito === 'function') {
@@ -145,6 +146,13 @@ export const CheckoutForm = () => {
     }
     localStorage.removeItem('aspen_cart');
 
+    // Si la API devolvió la URL de Checkout nativo con el carrito sincronizado, redirigimos de inmediato
+    if (urlCheckout) {
+      window.location.href = urlCheckout;
+      return;
+    }
+
+    // Fallback nativo para pasarelas alternativas o control local por éxito interno
     setCompraExitosa(true);
     
     if (metodoPago === 'efectivo') {
@@ -156,7 +164,6 @@ export const CheckoutForm = () => {
   if (compraExitosa) {
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        {/* 🛠️ ENFOQUE CORREGIDO: display: 'inline-flex' soluciona el crash de ts(2353) */}
         <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#f0fdf4', marginBottom: '24px' }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>

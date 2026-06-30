@@ -160,64 +160,59 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// 🛠️ FIX TOTAL DEL PAYLOAD: Cambiado 'items' por 'products' y sanitización de propiedades obligatorias
+// 🚀 FIX DE ARGUMENTOS Y WARNINGS: Se volvieron a incluir todos los parámetros para evitar el error en CheckoutForm.tsx
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
   metodoPago: string, 
   cupon: CuponDescuento | null,
   datosTarjeta?: { marca: string; ultimosCuatro: string }
-): Promise<boolean> => {
+): Promise<string | null> => {
   try {
-    let estadoFinanciero = 'pending'; 
-    let nombrePasarela = 'Transferencia Bancaria / Efectivo';
-
-    if (metodoPago === 'tarjeta') {
-      estadoFinanciero = 'paid';
-      nombrePasarela = datosTarjeta ? `Pasarela Nativa (${datosTarjeta.marca.toUpperCase()})` : 'Tarjeta de Crédito';
-    }
-
-    // Armamos el payload estructurado de forma estricta según requiere la API v1
-    const payload = {
-      contact_email: datosCliente.email.trim(),
-      contact_name: datosCliente.nombre.trim(),
-      contact_phone: datosCliente.telefono ? datosCliente.telefono.trim() : undefined,
-      shipping_address: {
-        address: datosCliente.direccion.trim(),
-        city: datosCliente.localidad ? datosCliente.localidad.trim() : 'Mendoza',
-        country: 'AR',
-        first_name: datosCliente.nombre.trim(),
-        last_name: '.'
-      },
-      // 🚨 CAMBIO CLAVE: Cambiado de 'items' a 'products' para resolver el error 400
+    // Vinculamos los datos que ingresó el usuario en tu frontend al objeto customer del carrito
+    const payloadCart = {
       products: carrito.map(item => ({
         variant_id: Number(item.variantId),
         quantity: Number(item.cantidad)
       })),
-      payment_method: metodoPago.toUpperCase(),
-      financial_status: estadoFinanciero,
-      gateway: nombrePasarela,
-      coupon_code: cupon ? cupon.codigo : undefined
+      coupon_code: cupon ? cupon.codigo : undefined,
+      customer: {
+        email: datosCliente.email.trim(),
+        name: datosCliente.nombre.trim(),
+        phone: datosCliente.telefono ? datosCliente.telefono.trim() : undefined
+      },
+      // Pasamos metadata útil para que el administrador de Aspen sepa la elección de pago original
+      extra: {
+        metodo_pago_seleccionado: metodoPago.toUpperCase(),
+        tarjeta_info: datosTarjeta ? `${datosTarjeta.marca} - ${datosTarjeta.ultimosCuatro}` : 'N/A'
+      }
     };
 
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
+    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/carts`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payloadCart)
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Error de validación en respuesta de Tiendanube:", errorText);
+      console.error("Error al inicializar el carrito en Tiendanube:", errorText);
+      return null;
     }
 
-    return response.ok;
+    const cartData = await response.json();
+
+    if (cartData && cartData.checkout_url) {
+      return cartData.checkout_url;
+    }
+
+    return null;
   } catch (error) {
-    console.error("Error de red registrando la venta en Tiendanube:", error);
-    return false;
+    console.error("Error de red procesando el puente con Tiendanube:", error);
+    return null;
   }
 };
