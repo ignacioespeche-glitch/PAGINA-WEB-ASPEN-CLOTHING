@@ -170,22 +170,20 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// 🚀 FIX REAL: Cambiado de /carts a /orders para impactar las ventas directamente en el panel de control
+// 🚀 FIX: Se agregaron guiones bajos (_) a los parámetros que no lee el endpoint de Carts para limpiar los warnings de TS
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
-  metodoPago: string, 
+  _metodoPago: string, 
   _cupon: CuponDescuento | null,
-  datosTarjeta?: { marca: string; ultimosCuatro: string }
+  _datosTarjeta?: { marca: string; ultimosCuatro: string }
 ): Promise<string | null> => {
   try {
-    console.log(`[Aspen] Registrando venta directa en Tiendanube para: ${datosCliente.nombre}`);
+    console.log(`[Aspen] Inicializando checkout de forma segura vía Carrito para: ${datosCliente.nombre}`);
     
     const lineItemsPayload = carrito.map(item => ({
-      variant_id: Number(item.variantId || item.id),
-      quantity: Number(item.cantidad || 1),
-      price: String(item.precio),
-      name: item.nombre
+      variant_id: Number(item.variantId),
+      quantity: Number(item.cantidad || 1)
     })).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
 
     if (lineItemsPayload.length === 0) {
@@ -193,44 +191,32 @@ export const crearOrdenTiendanube = async (
       return null;
     }
 
-    const orderBody = {
-      contact_email: datosCliente.email.trim(),
-      contact_name: datosCliente.nombre.trim(),
-      contact_phone: datosCliente.telefono.trim(),
-      shipping_address: {
-        address: datosCliente.direccion,
-        city: datosCliente.localidad || 'Mendoza',
-        country: 'AR'
-      },
-      payment_status: metodoPago === 'tarjeta' ? 'paid' : 'pending',
-      shipping_status: 'unshipped',
-      line_items: lineItemsPayload,
-      gateway: metodoPago === 'tarjeta' ? 'Mercado Pago (Simulado)' : metodoPago,
-      note: `Pedido desde la web Aspen. Pago elegido: ${metodoPago.toUpperCase()}. ${datosTarjeta ? `Tarjeta: ${datosTarjeta.marca} ************${datosTarjeta.ultimosCuatro}` : ''}`
+    const cartBody = {
+      items: lineItemsPayload
     };
 
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
+    const cartResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/carts`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
       },
-      body: JSON.stringify(orderBody)
+      body: JSON.stringify(cartBody)
     });
 
-    if (response.ok) {
-      const orderData = await response.json();
-      console.log(`[Aspen] Orden creada de forma exitosa. ID de Venta: #${orderData.id}`);
-      return "SUCCESS";
+    if (cartResponse.ok) {
+      const cartData = await cartResponse.json();
+      console.log(`[Aspen] Carrito creado exitosamente en Tiendanube. URL de Checkout obtenida.`);
+      return cartData.checkout_url || null;
     } else {
-      const errorText = await response.text();
-      console.error("[Error Creación Orden] Tiendanube rechazó la orden:", errorText);
+      const errorText = await cartResponse.text();
+      console.error("[Error Pasarela Carritos] Tiendanube rechazó el procesamiento del carro:", errorText);
       return null;
     }
 
   } catch (error) {
-    console.error("Error crítico de red procesando la orden local de venta:", error);
+    console.error("Error crítico de red procesando la alternativa de carritos en Tiendanube:", error);
     return null;
   }
 };
