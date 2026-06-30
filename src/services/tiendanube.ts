@@ -80,7 +80,6 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
 
 // 🛡️ LOGICA DE ENVÍOS BLINDADA: Intenta pegarle a la API, pero si da 404/error por el token, activa las tarifas locales para no trabar la web
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
-  // Tarifas espejo basadas en los costos actuales de Correo Argentino / Logística para que pruebes el Checkout completo
   const tarifasEspejo: OpcionEnvio[] = [
     { name: "Correo Argentino (A Sucursal)", price: 4200 },
     { name: "Correo Argentino (A Domicilio)", price: 5800 },
@@ -110,7 +109,6 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       })
     });
 
-    // Si la API responde con error de permisos (404/401/403), pasamos directo al plan de contingencia seguro
     if (!response.ok) {
       console.warn(`[Shipping Config] La API requiere actualización de token para POST. Activando tarifas de contingencia de forma segura.`);
       return tarifasEspejo;
@@ -185,6 +183,7 @@ export const crearOrdenTiendanube = async (
       console.log(`[Aspen] Detalles de tarjeta: ${datosTarjeta.marca} terminada en ${datosTarjeta.ultimosCuatro}`);
     }
 
+    // 1. Obtener los productos para verificar y descontar stock localmente en Tiendanube
     const productsResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products`, {
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -199,6 +198,7 @@ export const crearOrdenTiendanube = async (
     }
 
     const listaProductos = await productsResponse.json();
+    const lineItemsPayload: any[] = [];
 
     for (const item of carrito) {
       const variantId = Number(item.variantId);
@@ -217,6 +217,15 @@ export const crearOrdenTiendanube = async (
 
       const productoId = productoEncontrado.id;
 
+      // Estructuramos el item para la orden final
+      lineItemsPayload.push({
+        variant_id: variantId,
+        quantity: cantidadComprada,
+        price: item.precio.toString(),
+        name: item.nombre
+      });
+
+      // Flujo de descuento de stock nativo vía PUT
       const getResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${productoId}/variants/${variantId}`, {
         method: 'GET',
         headers: {
@@ -228,7 +237,6 @@ export const crearOrdenTiendanube = async (
 
       if (getResponse.ok) {
         const variantData = await getResponse.json();
-        
         if (variantData.stock !== null) {
           const stockActual = Number(variantData.stock);
           const nuevoStock = Math.max(0, stockActual - cantidadComprada);
@@ -248,9 +256,54 @@ export const crearOrdenTiendanube = async (
       }
     }
 
-    return null;
+    // Traemos de forma segura el costo del envío desde el localStorage para mandarlo a la orden
+    const costoEnvioGuardado = Number(localStorage.getItem('aspen_costo_envio')) || 0;
+
+    // 2. 🚀 ALTA REAL DE LA ORDEN EN EL PANEL PRINCIPAL DE TIENDANUBE
+    // Documentación oficial: POST /orders (Genera la venta formal)
+    const orderBody = {
+      contact_email: datosCliente.email,
+      contact_name: datosCliente.nombre,
+      contact_phone: datosCliente.telefono || '',
+      shipping_address: {
+        address: datosCliente.direccion,
+        city: datosCliente.localidad || 'Mendoza',
+        country: 'AR'
+      },
+      payment_status: 'pending',        // Forzamos estado pendiente para que salte a la interfaz de Ventas
+      shipping_status: 'unshipped',      // Marca la orden lista para empaquetar y enviar
+      gateway: metodoPago,               // Guarda el método elegido en tu front ('transferencia', 'tarjeta', 'efectivo')
+      shipping_pickup_type: 'ship',
+      shipping_cost_owner: costoEnvioGuardado.toString(), // Mandamos el costo real calculado al panel
+      products: lineItemsPayload,
+      coupon: cupon ? [{ code: cupon.codigo, type: cupon.tipo, value: cupon.valor.toString() }] : []
+    };
+
+    const createOrderResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
+      method: 'POST',
+      headers: {
+        'Authentication': `bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+      },
+      body: JSON.stringify(orderBody)
+    });
+
+    if (createOrderResponse.ok) {
+      const ordenCreada = await createOrderResponse.json();
+      console.log(`[Aspen Venta exitosa] Orden #${ordenCreada.id} impactada correctamente en el panel.`);
+      
+      // Si la API de Tiendanube te da un link de checkout nativo para esa orden lo retornamos,
+      // sino devolvemos null para que procese tu vista local de éxito.
+      return ordenCreada.checkout_url || null;
+    } else {
+      const errorData = await createOrderResponse.text();
+      console.error("[Error Tiendanube] No se pudo crear la orden en el servidor:", errorData);
+      return null;
+    }
+
   } catch (error) {
-    console.error("Error de red modificando el stock en Tiendanube:", error);
+    console.error("Error de red modificando el stock o registrando la orden en Tiendanube:", error);
     return null;
   }
 };
