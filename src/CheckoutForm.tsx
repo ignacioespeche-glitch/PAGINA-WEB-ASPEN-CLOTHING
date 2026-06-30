@@ -81,7 +81,6 @@ export const CheckoutForm = () => {
   const precioConRecargoTarjeta = Math.round(subtotalConDescuento * 1.20); 
   const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConRecargoTarjeta : precioBaseCatalogo;
 
-  // Link de WhatsApp para solicitud de cupón en Efectivo
   const obtenerLinkWhatsAppEfectivo = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
@@ -90,7 +89,6 @@ export const CheckoutForm = () => {
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
-  // Link de WhatsApp para envío de Comprobante de Transferencia
   const obtenerLinkWhatsAppTransferencia = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
@@ -159,7 +157,6 @@ export const CheckoutForm = () => {
           ¡COMPRA REALIZADA CORRECTAMENTE!
         </h1>
         
-        {/* Cambiado por un texto formal en base a lo solicitado */}
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
           Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. En breve te estaremos enviando un mail formal con la confirmación de tu pedido y los detalles de tu facturación a <span>{email}</span>.
         </p>
@@ -176,7 +173,6 @@ export const CheckoutForm = () => {
           </p>
         </div>
 
-        {/* BOTÓN EXCLUSIVO PARA ENVIAR COMPROBANTE DE TRANSFERENCIA */}
         {metodoPago === 'transferencia' && (
           <button 
             type="button" 
@@ -198,9 +194,14 @@ export const CheckoutForm = () => {
           </button>
         )}
 
+        {/* 🚀 MODIFICACIÓN AQUÍ: Al hacer clic, borramos la sesión del carro y forzamos el reset completo de la web */}
         <button 
           type="button" 
-          onClick={() => { window.location.href = '/'; }}
+          onClick={() => { 
+            localStorage.removeItem('cart'); // Limpia el storage por seguridad si existiera
+            localStorage.removeItem('carrito');
+            window.location.href = '/'; // Redirige y limpia el estado local de React al recargar la raíz
+          }}
           style={{ width: '100%', background: '#fff', color: '#000', border: '1px solid #000', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase' }}
         >
           VOLVER AL INICIO
@@ -209,12 +210,11 @@ export const CheckoutForm = () => {
     );
   }
 
-  // VISTA 2: FORMULARIO DE CHECKOUT PREMIUM NATIVO
+  // VISTA 2: FORMULARIO DE CHECKOUT
   return (
     <div className="checkout-container" style={{ padding: '140px max(4vw, 20px) 40px max(4vw, 20px)', minHeight: '80vh', fontFamily: 'Inter, sans-serif' }}>
       <form onSubmit={handlePagarAhoraSubmit} style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '80px', alignItems: 'start' }}>
         
-        {/* COLUMNA IZQUIERDA: CAMPOS Y PASARELA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
           
           {/* BLOQUE 1: IDENTIFICACIÓN Y ENVÍO */}
@@ -229,7 +229,7 @@ export const CheckoutForm = () => {
             <input type="text" placeholder="CIUDAD / LOCALIDAD" value={localidad} onChange={(e) => setLocalidad(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
           </div>
 
-          {/* BLOQUE 2: MEDIO DE PAGO SELECTOR */}
+          {/* BLOQUE 2: MEDIO DE PAGO */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <h2 style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', borderBottom: '1px solid #000', paddingBottom: '12px', margin: 0 }}>
               2. MEDIO DE PAGO
@@ -261,7 +261,6 @@ export const CheckoutForm = () => {
               </label>
             </div>
 
-            {/* DESPLIEGUE DINÁMICO DE DETALLES SEGÚN SELECCIÓN */}
             <div style={{ marginTop: '4px' }}>
               {metodoPago === 'tarjeta' && (
                 <div style={{ border: '1px solid #000', padding: '24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -324,7 +323,7 @@ export const CheckoutForm = () => {
           </button>
         </div>
 
-        {/* COLUMNA DERECHA: RESUMEN DE COMPRA SIEMPRE VISIBLE */}
+        {/* COLUMNA DERECHA */}
         <div style={{ background: 'transparent', padding: '35px 0 max(4vw, 20px) 0', border: 'none' }}>
           <h3 style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '25px', color: '#000' }}>
             RESUMEN DEL PEDIDO ({carrito.reduce((acc, item) => acc + (item?.cantidad ?? 0), 0)})
@@ -351,7 +350,6 @@ export const CheckoutForm = () => {
             })}
           </div>
 
-          {/* DESCUENTOS / CUPÓN */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '25px', borderBottom: '1px solid #000', paddingBottom: '25px' }}>
             <div style={{ display: 'flex', gap: '10px' }}>
               <input type="text" placeholder="CÓDIGO DE DESCUENTO" value={cuponInput} onChange={(e) => setCuponInput(e.target.value)} style={{ flex: 1, padding: '12px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', outline: 'none' }} />
@@ -363,7 +361,6 @@ export const CheckoutForm = () => {
             {errorCupon && <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626' }}>✕ {errorCupon}</span>}
           </div>
 
-          {/* CALCULADORA FINAL */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
               <span>SUBTOTAL:</span>
