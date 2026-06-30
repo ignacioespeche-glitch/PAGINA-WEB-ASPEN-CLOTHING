@@ -10,10 +10,10 @@ export const CheckoutForm = () => {
   const carrito = context?.carrito ?? [];
   const totalPrecio = context?.totalPrecio ?? 0;
   
-  // 🚀 IMPORTANTE: Traemos el costo de envío guardado globalmente desde el Context
+  // Traemos el costo de envío guardado globalmente desde el Context
   const costoEnvio = context?.costoEnvio ?? 0;
   
-  // Extraemos la función mutadora de forma segura casteando el contexto
+  // Extraemos la función mutadora de forma segura
   const setCarrito = (context as any)?.setCarrito || (context as any)?.setCart || (useCart() as any).setCarrito;
   
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); 
@@ -84,10 +84,7 @@ export const CheckoutForm = () => {
 
   const subtotalConDescuento = Math.max(0, totalPrecio - descuentoCalculado);
   
-  // 🚀 LÓGICA DE SUMA MODIFICADA: 
-  // El precio base del catálogo ahora suma el costo de envío.
-  // El recargo del 20% de la tarjeta se aplica sobre los productos y luego se le suma el envío fijo (o según prefieras).
-  // Normalmente el recargo financiero corre sobre el total general. Lo calculamos sobre el total neto del pedido con envío incluido:
+  // Recargo financiero sobre productos + envío
   const precioBaseCatalogo = subtotalConDescuento + costoEnvio;
   const precioConRecargoTarjeta = Math.round((subtotalConDescuento + costoEnvio) * 1.20); 
   
@@ -137,6 +134,8 @@ export const CheckoutForm = () => {
         return;
       }
       const tarjetaLimpia = numeroTarjeta.replace(/\s+/g, '');
+      
+      // ✅ CORRECCIÓN AQUÍ: Quitamos 'orderBody' para coincidir exactamente con la interfaz del servicio
       datosTarjetaPayload = {
         marca: marcaDetectada || 'Desconocida',
         ultimosCuatro: tarjetaLimpia.substring(tarjetaLimpia.length - 4)
@@ -146,32 +145,28 @@ export const CheckoutForm = () => {
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
-    // Mandamos el carrito y los datos. Asegurate de que `crearOrdenTiendanube` maneje internamente 
-    // el envío o tome el costoEnvio si lo requiere su implementación actual.
-    const urlCheckout = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
+    const resultadoOrden = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
-    // Vaciado automático en el estado y storage al registrar exitosamente
-    if (typeof setCarrito === 'function') {
-      setCarrito([]); 
-    }
-    localStorage.removeItem('aspen_cart');
-    localStorage.removeItem('aspen_costo_envio'); // Limpiamos el envío tras finalizar la compra
+    if (resultadoOrden === "SUCCESS") {
+      if (typeof setCarrito === 'function') {
+        setCarrito([]); 
+      }
+      localStorage.removeItem('aspen_cart');
+      localStorage.removeItem('aspen_costo_envio');
 
-    // Si la API devolvió la URL de Checkout nativo con el carrito sincronizado, redirigimos de inmediato
-    if (urlCheckout) {
-      window.location.href = urlCheckout;
-      return;
-    }
-
-    // Fallback nativo para pasarelas alternativas o control local por éxito interno
-    setCompraExitosa(true);
-    
-    if (metodoPago === 'efectivo') {
-      window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
+      setCompraExitosa(true);
+      
+      if (metodoPago === 'efectivo') {
+        window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
+      } else if (metodoPago === 'transferencia') {
+        window.open(obtenerLinkWhatsAppTransferencia(), '_blank');
+      }
+    } else {
+      alert("Hubo un problema de conexión al guardar tu pedido en el panel de administración. Reintenta por favor.");
     }
   };
 
-  // VISTA 1: PANTALLA COMPLETA DE ÉXITO POST-PAGO FORMAL
+  // VISTA 1: PANTALLA COMPLETA DE ÉXITO POST-PAGO
   if (compraExitosa) {
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
@@ -410,7 +405,6 @@ export const CheckoutForm = () => {
               </div>
             )}
 
-            {/* 🚀 NUEVA LÍNEA VISUAL: Renderiza el costo del envío en el resumen si es mayor a 0 */}
             {costoEnvio > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                 <span>COSTO DE ENVÍO:</span>
