@@ -77,7 +77,7 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   }
 };
 
-// 🚀 FIX DEFINITIVO DE URL: Se removió el ${STORE_ID} de la URL porque shipping_rates es un endpoint global de la API v1
+// 🚀 SOLUCIÓN COMPLETA: Volvemos a la URL estructurada e incluimos el 'origin' obligatorio de Mendoza
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
   try {
     const itemsPayload = carrito.map(item => {
@@ -88,13 +88,8 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       };
     }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
 
-    console.log("[Shipping Debug] Payload enviado a Tiendanube:", JSON.stringify({
-      destination: { postal_code: codigoPostal.trim(), country: 'AR' },
-      items: itemsPayload
-    }));
-
-    // 🛠️ Cambiado de `/api-tiendanube/v1/${STORE_ID}/shipping_rates` a `/api-tiendanube/v1/shipping_rates`
-    const response = await fetch(`/api-tiendanube/v1/shipping_rates`, {
+    // Reestablecemos la ruta proxy oficial con STORE_ID para que no tire 404
+    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -102,6 +97,10 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
         'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
       },
       body: JSON.stringify({
+        origin: {
+          postal_code: '5500', // 🛠️ CLAVE: Código postal base de Mendoza para calcular distancias
+          country: 'AR'
+        },
         destination: {
           postal_code: codigoPostal.trim(),
           country: 'AR'
@@ -117,7 +116,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
     }
 
     const data = await response.json();
-    console.log("[Shipping Debug] Respuesta de Tiendanube:", data);
+    console.log("[Shipping Debug] Respuesta exitosa:", data);
 
     if (Array.isArray(data)) {
       return data.map((rate: any) => ({
