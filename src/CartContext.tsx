@@ -21,6 +21,11 @@ interface CartContextType {
   agregarAlCarrito: (item: CartItem, stockReal: number) => void;
   notificacionPopup: CartItem | null;
   cerrarNotificacion: () => void;
+  // 🚀 NUEVOS: Persistencia global del método de envío elegido para acoplarlo con el Checkout
+  codigoPostal: string;
+  setCodigoPostal: (cp: string) => void;
+  costoEnvio: number;
+  setCostoEnvio: (costo: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -34,11 +39,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [notificacionPopup, setNotificacionPopup] = useState<CartItem | null>(null);
 
+  // 🚀 ESTADOS DE ENVÍO: Persistidos localmente
+  const [codigoPostal, setCodigoPostal] = useState<string>(() => localStorage.getItem('aspen_cp') || '');
+  const [costoEnvio, setCostoEnvio] = useState<number>(() => Number(localStorage.getItem('aspen_costo_envio')) || 0);
+
   useEffect(() => {
     localStorage.setItem('aspen_cart', JSON.stringify(carrito));
   }, [carrito]);
 
-  // VOLVEMOS AL PRECIO REAL: totalPrecio ahora es el valor neto original de Tienda Nube
+  useEffect(() => {
+    localStorage.setItem('aspen_cp', codigoPostal);
+  }, [codigoPostal]);
+
+  useEffect(() => {
+    localStorage.setItem('aspen_costo_envio', costoEnvio.toString());
+  }, [costoEnvio]);
+
   const totalPrecio = carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
 
   const agregarAlCarrito = (nuevoItem: CartItem, stockReal: number) => {
@@ -89,7 +105,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsCartOpen, 
         agregarAlCarrito, 
         notificacionPopup, 
-        cerrarNotificacion 
+        cerrarNotificacion,
+        codigoPostal,
+        setCodigoPostal,
+        costoEnvio,
+        setCostoEnvio
       }}
     >
       {children}

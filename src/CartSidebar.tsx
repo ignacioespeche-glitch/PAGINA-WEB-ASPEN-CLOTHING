@@ -1,16 +1,33 @@
 // src/CartSidebar.tsx
 import { useState, useEffect } from 'react';
 import { useCart } from './CartContext';
-import { obtenerProductos, type TiendanubeProducto } from './services/tiendanube';
+import { obtenerProductos, calcularEnvioReal, type TiendanubeProducto, type OpcionEnvio } from './services/tiendanube';
 
 interface CartSidebarProps {
   onIniciarCheckout: () => void;
 }
 
 export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
-  const { carrito, removerDelCarrito, agregarAlCarrito, totalPrecio, isCartOpen, setIsCartOpen } = useCart();
+  const { 
+    carrito, 
+    removerDelCarrito, 
+    agregarAlCarrito, 
+    totalPrecio, 
+    isCartOpen, 
+    setIsCartOpen,
+    codigoPostal,
+    setCodigoPostal,
+    costoEnvio,
+    setCostoEnvio
+  } = useCart();
 
   const [productosReales, setProductosReales] = useState<TiendanubeProducto[]>([]);
+  
+  // Estados para la calculadora de envíos incorporada
+  const [calculando, setCalculando] = useState(false);
+  const [opcionesEnvio, setOpcionesEnvio] = useState<OpcionEnvio[]>([]);
+  const [envioCalculado, setEnvioCalculado] = useState(false);
+  const [mensajeErrorEnvio, setMensajeErrorEnvio] = useState('');
 
   useEffect(() => {
     if (isCartOpen) {
@@ -67,8 +84,42 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
 
   const recomendaciones = obtenerRecommendations();
 
+  // Lógica interactiva con la API de Tiendanube para cotizar el envío real
+  const handleCalcularEnvio = async () => {
+    setMensajeErrorEnvio('');
+    if (!codigoPostal.trim()) {
+      setMensajeErrorEnvio('POR FAVOR INGRESÁ UN CÓDIGO POSTAL.');
+      return;
+    }
+
+    setCalculando(true);
+    try {
+      const tarifas = await calcularEnvioReal(codigoPostal, carrito);
+      if (tarifas && tarifas.length > 0) {
+        setOpcionesEnvio(tarifas);
+        // Por defecto seleccionamos el costo de la primera opción que devuelva Tiendanube
+        setCostoEnvio(tarifas[0].price);
+        setEnvioCalculado(true);
+      } else {
+        setOpcionesEnvio([]);
+        setCostoEnvio(0);
+        setEnvioCalculado(false);
+        setMensajeErrorEnvio('NO HAY ENVÍOS DISPONIBLES PARA ESTE CÓDIGO POSTAL.');
+      }
+    } catch (error) {
+      console.error(error);
+      setMensajeErrorEnvio('ERROR AL COTIZAR EL ENVÍO. INTENTÁ DE NUEVO.');
+    } finally {
+      setCalculando(false);
+    }
+  };
+
   const handleFinalizarCompra = () => {
     if (carrito.length === 0) return;
+    if (!envioCalculado) {
+      setMensajeErrorEnvio('DEBÉS CALCULAR EL ENVÍO ANTES DE INICIAR LA COMPRA.');
+      return;
+    }
     setIsCartOpen(false); 
     onIniciarCheckout();   
   };
@@ -76,11 +127,13 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
   const handleRestarCantidad = (item: any) => {
     if (item.cantidad <= 1) return;
     agregarAlCarrito({ ...item, cantidad: -1 }, item.stockMaximo || 99);
+    setEnvioCalculado(false); // Forzamos a recalcular si cambia el peso/volumen del carrito
   };
 
   const handleSumarCantidad = (item: any) => {
     if (item.cantidad >= (item.stockMaximo || 99)) return;
     agregarAlCarrito({ ...item, cantidad: 1 }, item.stockMaximo || 99);
+    setEnvioCalculado(false); // Forzamos a recalcular si cambia el peso/volumen del carrito
   };
 
   if (!isCartOpen) return null;
@@ -110,7 +163,7 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div className="cart-item-fila-superior" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
                         <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#000' }}>{item.nombre} ({item.talle})</p>
-                        <button className="btn-borrar-item-nuevo" onClick={() => removerDelCarrito(item.id, item.talle)}>Borrar</button>
+                        <button className="btn-borrar-item-nuevo" onClick={() => { removerDelCarrito(item.id, item.talle); setEnvioCalculado(false); }}>Borrar</button>
                       </div>
                       
                       <div className="cart-item-acciones-precio" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
@@ -146,15 +199,18 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                             <p className="cross-selling-precio">${precioBase.toLocaleString('es-AR')},00</p>
                             <button 
                               className="btn-cross-agregar"
-                              onClick={() => agregarAlCarrito({
-                                id: prod.id,
-                                nombre: prod.name?.es || 'ASPEN ITEM',
-                                precio: precioBase,
-                                imagen: fotoUrl,
-                                talle: talleDefecto,
-                                variantId: variantIdReal,
-                                cantidad: 1
-                              }, primeraVariante?.stock || 5)}
+                              onClick={() => {
+                                agregarAlCarrito({
+                                  id: prod.id,
+                                  nombre: prod.name?.es || 'ASPEN ITEM',
+                                  precio: precioBase,
+                                  imagen: fotoUrl,
+                                  talle: talleDefecto,
+                                  variantId: variantIdReal,
+                                  cantidad: 1
+                                }, primeraVariante?.stock || 5);
+                                setEnvioCalculado(false);
+                              }}
                             >
                               + AGREGAR
                             </button>
@@ -166,10 +222,75 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                 </div>
               )}
 
-              <div className="cart-resumen-valores">
-                <div className="cart-fila-valores total-principal">
-                  <span>TOTAL:</span>
+              {/* 🚀 NUEVA SECCIÓN: CALCULADORA DE ENVÍOS OBLIGATORIA */}
+              <div className="cart-shipping-calculator" style={{ borderTop: '1px solid #000', paddingTop: '20px', marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h3 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: 0, color: '#000' }}>
+                  CALCULAR COSTO DE ENVÍO
+                </h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input 
+                    type="text" 
+                    placeholder="TU CÓDIGO POSTAL *" 
+                    value={codigoPostal} 
+                    onChange={(e) => {
+                      setCodigoPostal(e.target.value.replace(/\D/g, ''));
+                      setEnvioCalculado(false);
+                    }} 
+                    style={{ flex: 1, padding: '12px', border: '1px solid #000', fontSize: '11px', outline: 'none', letterSpacing: '0.5px' }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={handleCalcularEnvio} 
+                    disabled={calculando}
+                    style={{ background: '#000', color: '#fff', border: 'none', padding: '0 20px', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', cursor: 'pointer', textTransform: 'uppercase' }}
+                  >
+                    {calculando ? '...' : 'CALCULAR'}
+                  </button>
+                </div>
+
+                {/* Feedback interactivo de tarifas reales de Tiendanube */}
+                {envioCalculado && opcionesEnvio.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#fafafa', padding: '12px', border: '1px solid #eee' }}>
+                    {opcionesEnvio.map((opcion, i) => (
+                      <label key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', cursor: 'pointer', fontWeight: costoEnvio === opcion.price ? 700 : 400 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <input 
+                            type="radio" 
+                            name="shipping_option" 
+                            checked={costoEnvio === opcion.price} 
+                            onChange={() => setCostoEnvio(opcion.price)}
+                            style={{ accentColor: '#000' }}
+                          />
+                          <span style={{ textTransform: 'uppercase' }}>{opcion.name}</span>
+                        </div>
+                        <span>${opcion.price.toLocaleString('es-AR')},00</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {mensajeErrorEnvio && (
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                    {mensajeErrorEnvio}
+                  </span>
+                )}
+              </div>
+
+              {/* RESUMEN DE VALORES */}
+              <div className="cart-resumen-valores" style={{ marginTop: '20px', borderTop: '1px solid #000', paddingTop: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
+                  <span>SUBTOTAL:</span>
                   <span>${totalPrecio.toLocaleString('es-AR')},00</span>
+                </div>
+                {envioCalculado && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
+                    <span>COSTO DE ENVÍO:</span>
+                    <span>${costoEnvio.toLocaleString('es-AR')},00</span>
+                  </div>
+                )}
+                <div className="cart-fila-valores total-principal" style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: '10px' }}>
+                  <span>TOTAL:</span>
+                  <span>${(totalPrecio + (envioCalculado ? costoEnvio : 0)).toLocaleString('es-AR')},00</span>
                 </div>
               </div>
             </>
@@ -178,7 +299,16 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
 
         {carrito.length > 0 && (
           <div className="cart-footer-nuevo">
-            <button className="btn-finalizar-compra-unificado" onClick={handleFinalizarCompra}>
+            {/* El botón se bloquea visualmente y cambia su estilo si no calcularon el envío */}
+            <button 
+              className="btn-finalizar-compra-unificado" 
+              onClick={handleFinalizarCompra}
+              style={{
+                opacity: envioCalculado ? 1 : 0.6,
+                cursor: envioCalculado ? 'pointer' : 'not-allowed',
+                backgroundColor: envioCalculado ? '#000' : '#444'
+              }}
+            >
               INICIAR COMPRA
             </button>
             <button className="btn-seguir-viendo" onClick={() => setIsCartOpen(false)}>
