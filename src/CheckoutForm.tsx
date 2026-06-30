@@ -10,7 +10,7 @@ export const CheckoutForm = () => {
   const carrito = context?.carrito ?? [];
   const totalPrecio = context?.totalPrecio ?? 0;
   
-  // Extraemos la función del contexto de forma segura castéandola temporalmente
+  // Forzamos el tipado para extraer de forma segura la función mutadora del contexto
   const setCarrito = (context as any)?.setCarrito || (context as any)?.setCart;
   
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); 
@@ -88,7 +88,7 @@ export const CheckoutForm = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
-    const mensaje = `Hola Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
+    const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -96,7 +96,7 @@ export const CheckoutForm = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
-    const mensaje = `Hola Aspen! Soy ${nombreCliente}.\n\nAcabo de realizar la transferencia por un total de $${totalPedido},00 correspondiente a mi pedido. Adjunto el comprobante de pago para su verificación.`;
+    const mensaje = `Hola chicos de Aspen! Soy ${nombreCliente}.\n\nAcabo de realizar la transferencia por un total de $${totalPedido},00 correspondiente a mi pedido. Adjunto el comprobante de pago para su verificación.`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -113,7 +113,6 @@ export const CheckoutForm = () => {
     }
   };
 
-  // 🚀 AQUÍ SE LIMPIA APENAS SE CONFIRMA LA ORDEN exitosamente
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -140,12 +139,13 @@ export const CheckoutForm = () => {
 
     await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
-    // 🛠️ ACCIÓN: Limpiamos el carrito en el estado global y en almacenamiento local inmediatamente
+    // Vaciado preventivo inmediato al registrar la orden
     if (typeof setCarrito === 'function') {
       setCarrito([]); 
     }
     localStorage.removeItem('cart');
     localStorage.removeItem('carrito');
+    localStorage.removeItem('cartItems');
 
     setCompraExitosa(true);
     
@@ -205,9 +205,28 @@ export const CheckoutForm = () => {
           </button>
         )}
 
+        {/* Botón de Retorno con Vaciado Absoluto y Sincronizado */}
         <button 
           type="button" 
-          onClick={() => { window.location.href = '/'; }}
+          onClick={(e) => {
+            e.preventDefault();
+            
+            // 1. Borramos el Storage local
+            localStorage.removeItem('cart');
+            localStorage.removeItem('carrito');
+            localStorage.removeItem('cartItems');
+            localStorage.clear(); 
+
+            // 2. Reseteamos el Contexto de React
+            if (typeof setCarrito === 'function') {
+              setCarrito([]);
+            }
+
+            // 3. Redirección con delay para asegurar la persistencia del borrado
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 100);
+          }}
           style={{ width: '100%', background: '#fff', color: '#000', border: '1px solid #000', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase' }}
         >
           VOLVER AL INICIO
