@@ -138,6 +138,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
       }
     });
 
+    // 🛠️ TYPO FIX: Cambiado 'codigoLoptio' por 'codigoLimpio' en las tres salidas de error/fallback
     if (!response.ok) return cuponesLocales[codigoLimpio] || null;
 
     const cupones = await response.json();
@@ -160,7 +161,6 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// 🚀 FIX DE ENDPOINT: Se cambió el endpoint al mapeo directo de /variants/{id} para evitar la dependencia de productoId en el carrito
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -174,15 +174,43 @@ export const crearOrdenTiendanube = async (
       console.log(`[Aspen] Detalles de tarjeta: ${datosTarjeta.marca} terminada en ${datosTarjeta.ultimosCuatro}`);
     }
 
-    // Iteramos sobre cada item del carrito
+    // 1. Consultamos todo el catálogo para saber dinámicamente a qué productos pertenecen las variantes
+    const productsResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products`, {
+      headers: {
+        'Authentication': `bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+      }
+    });
+
+    if (!productsResponse.ok) {
+      console.error("No se pudieron consultar los productos de Tiendanube para mapear el stock.");
+      return null;
+    }
+
+    const listaProductos = await productsResponse.json();
+
+    // 2. Descontamos el inventario real de cada talle comprado
     for (const item of carrito) {
       const variantId = Number(item.variantId);
       const cantidadComprada = Number(item.cantidad || 1);
 
       if (!variantId) continue;
 
-      // 🛠️ LLAMADA DIRECTA: Le pegamos directo a la variante sin pasar por /products/{id}/
-      const getResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/variants/${variantId}`, {
+      // Buscamos dinámicamente en el catálogo local el producto correspondiente a esta variante
+      const productoEncontrado = listaProductos.find((p: any) => 
+        Array.isArray(p.variants) && p.variants.some((v: any) => Number(v.id) === variantId)
+      );
+
+      if (!productoEncontrado) {
+        console.error(`[Error Stock] Variante ${variantId} no mapeada en el catálogo activo.`);
+        continue;
+      }
+
+      const productoId = productoEncontrado.id;
+
+      // 3. Pegamos a la ruta oficial anidada
+      const getResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${productoId}/variants/${variantId}`, {
         method: 'GET',
         headers: {
           'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -198,8 +226,8 @@ export const crearOrdenTiendanube = async (
           const stockActual = Number(variantData.stock);
           const nuevoStock = Math.max(0, stockActual - cantidadComprada);
 
-          // Hacemos el PUT directo para asentar el stock real modificado
-          await fetch(`/api-tiendanube/v1/${STORE_ID}/variants/${variantId}`, {
+          // 4. Modificamos el stock mediante PUT oficial
+          await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${productoId}/variants/${variantId}`, {
             method: 'PUT',
             headers: {
               'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -209,10 +237,8 @@ export const crearOrdenTiendanube = async (
             body: JSON.stringify({ stock: nuevoStock })
           });
           
-          console.log(`[Stock Aspen] Variante ${variantId} modificada. Stock previo: ${stockActual} -> Nuevo stock: ${nuevoStock}`);
+          console.log(`[Stock Aspen] ¡Éxito! Producto: ${productoId} - Variante: ${variantId}. Stock previo: ${stockActual} -> Nuevo: ${nuevoStock}`);
         }
-      } else {
-        console.error(`No se pudo encontrar la variante ${variantId} en Tiendanube.`);
       }
     }
 
