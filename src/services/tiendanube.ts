@@ -77,7 +77,7 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   }
 };
 
-// 🚀 SOLUCIÓN COMPLETA: Volvemos a la URL estructurada e incluimos el 'origin' obligatorio de Mendoza
+// 🚀 DISPARO DIRECTO EXTERNO: Evitamos el proxy local '/api-tiendanube/' pegándole derecho a la URL absoluta de Tiendanube
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
   try {
     const itemsPayload = carrito.map(item => {
@@ -88,8 +88,10 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       };
     }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
 
-    // Reestablecemos la ruta proxy oficial con STORE_ID para que no tire 404
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
+    console.log("[Shipping Debug] Conectando de forma directa a producción con payload:", JSON.stringify(itemsPayload));
+
+    // 🛠️ Cambiamos la ruta local por la API oficial externa para evadir el 404 del proxy de Vite
+    const response = await fetch(`https://api.tiendanube.com/v1/${STORE_ID}/shipping_rates`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -98,7 +100,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       },
       body: JSON.stringify({
         origin: {
-          postal_code: '5500', // 🛠️ CLAVE: Código postal base de Mendoza para calcular distancias
+          postal_code: '5500', 
           country: 'AR'
         },
         destination: {
@@ -111,12 +113,12 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Error al calcular envío en Tiendanube:", response.status, errorText);
+      console.error("Error directo de la API de Tiendanube:", response.status, errorText);
       return [];
     }
 
     const data = await response.json();
-    console.log("[Shipping Debug] Respuesta exitosa:", data);
+    console.log("[Shipping Debug] Tarifas obtenidas con éxito:", data);
 
     if (Array.isArray(data)) {
       return data.map((rate: any) => ({
@@ -126,7 +128,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
     }
     return [];
   } catch (error) {
-    console.error("Error con la calculadora de Tiendanube:", error);
+    console.error("Error de red con la conexión directa externa:", error);
     return [];
   }
 };
