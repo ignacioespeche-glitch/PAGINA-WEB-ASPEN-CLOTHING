@@ -6,7 +6,6 @@ import { validarCuponTiendanube, crearOrdenTiendanube, type CuponDescuento } fro
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
 export const CheckoutForm = () => {
-  // Traemos los datos del contexto con seguridad por si vienen vacíos
   const context = useCart();
   const carrito = context?.carrito ?? [];
   const totalPrecio = context?.totalPrecio ?? 0;
@@ -32,16 +31,14 @@ export const CheckoutForm = () => {
   const [cuponAplicado, setCuponAplicado] = useState<CuponDescuento | null>(null);
   const [errorCupon, setErrorCupon] = useState('');
 
-  // Estado de Compra Realizada Exitosamente (Pantalla Dedicada)
+  // Estado de Compra Realizada Exitosamente
   const [compraExitosa, setCompraExitosa] = useState(false);
   const [montoFinalCobrado, setMontoFinalCobrado] = useState(0);
 
-  // Generación del listado para el vencimiento (Mes: 01-12 / Año: 2026 hasta 2070)
   const meses = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
   const anioActual = 2026;
   const anios = Array.from({ length: 2070 - anioActual + 1 }, (_, i) => String(anioActual + i));
 
-  // Formateador analítico para espaciar el número de tarjeta cada 4 dígitos
   const handleNumeroTarjetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value.replace(/\D/g, ''); 
     const formateado = input.match(/.{1,4}/g)?.join(' ') || ''; 
@@ -50,7 +47,6 @@ export const CheckoutForm = () => {
     }
   };
 
-  // Limitador para el código de seguridad a máximo 3 dígitos
   const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value.replace(/\D/g, ''); 
     if (input.length <= 3) {
@@ -58,7 +54,6 @@ export const CheckoutForm = () => {
     }
   };
 
-  // Función analítica para detectar si es Visa o Mastercard
   const obtenerMarcaTarjeta = (numero: string) => {
     const limpio = numero.replace(/\s+/g, '');
     if (limpio.startsWith('4')) return 'Visa';
@@ -72,7 +67,6 @@ export const CheckoutForm = () => {
 
   const marcaDetectada = obtenerMarcaTarjeta(numeroTarjeta);
 
-  // Lógica matemática del carro y beneficios por cupones
   let descuentoCalculado = 0;
   if (cuponAplicado) {
     if (cuponAplicado.tipo === 'percentage') {
@@ -87,11 +81,21 @@ export const CheckoutForm = () => {
   const precioConRecargoTarjeta = Math.round(subtotalConDescuento * 1.20); 
   const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConRecargoTarjeta : precioBaseCatalogo;
 
+  // Link de WhatsApp para solicitud de cupón en Efectivo
   const obtenerLinkWhatsAppEfectivo = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
     const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
+    return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
+  };
+
+  // Link de WhatsApp para envío de Comprobante de Transferencia
+  const obtenerLinkWhatsAppTransferencia = () => {
+    const telefonoLocal = '542612515727';
+    const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
+    const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
+    const mensaje = `Hola chicos de Aspen! Soy ${nombreCliente}.\n\nAcabo de realizar la transferencia por un total de $${totalPedido},00 correspondiente a mi pedido. Adjunto el comprobante de pago para su verificación.`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -108,7 +112,6 @@ export const CheckoutForm = () => {
     }
   };
 
-  // CONTROLADOR UNIFICADO DE PAGO: Auditoría y Procesamiento
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -133,16 +136,6 @@ export const CheckoutForm = () => {
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
-    // Auditoría en consola
-    console.log("=== DATOS DE COMPRA CAPTURADOS ===", {
-      cliente: datosCliente,
-      carrito: carrito,
-      metodoPago: metodoPago,
-      cupon: cuponAplicado,
-      tarjeta: metodoPago === 'tarjeta' ? datosTarjetaPayload : 'No aplica',
-      montoFinal: montoFinalAMostrar
-    });
-
     await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
     setCompraExitosa(true);
@@ -152,7 +145,7 @@ export const CheckoutForm = () => {
     }
   };
 
-  // VISTA 1: PANTALLA COMPLETA DE ÉXITO POST-PAGO
+  // VISTA 1: PANTALLA COMPLETA DE ÉXITO POST-PAGO FORMAL
   if (compraExitosa) {
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
@@ -166,8 +159,9 @@ export const CheckoutForm = () => {
           ¡COMPRA REALIZADA CORRECTAMENTE!
         </h1>
         
+        {/* Cambiado por un texto formal en base a lo solicitado */}
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, registramos tu orden con éxito. Enviamos un correo de confirmación con los detalles a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. En breve te estaremos enviando un mail formal con la confirmación de tu pedido y los detalles de tu facturación a <span>{email}</span>.
         </p>
 
         <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '32px' }}>
@@ -177,31 +171,37 @@ export const CheckoutForm = () => {
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método elegido:</strong> {metodoPago === 'tarjeta' ? `Tarjeta de Crédito (${marcaDetectada.toUpperCase()})` : metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Destino de entrega:</strong> {direccion}, {localidad || 'Mendoza'}</p>
           <p style={{ margin: '12px 0 0 0', fontSize: '13px', fontWeight: 700, paddingTop: '12px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
-            <span>TOTAL ABONADO:</span>
+            <span>TOTAL DE LA ORDEN:</span>
             <span>${montoFinalCobrado.toLocaleString('es-AR')},00</span>
           </p>
         </div>
 
+        {/* BOTÓN EXCLUSIVO PARA ENVIAR COMPROBANTE DE TRANSFERENCIA */}
         {metodoPago === 'transferencia' && (
-          <div style={{ padding: '18px', border: '1px solid #059669', backgroundColor: '#f0fdf4', color: '#16a34a', fontSize: '12px', fontWeight: 600, marginBottom: '24px', textAlign: 'left', lineHeight: '1.5' }}>
-            💡 Recordá transferir los ${montoFinalCobrado.toLocaleString('es-AR')},00 al alias <strong>aspen.mdz</strong> y enviar el comprobante por WhatsApp para despachar tu talle de inmediato.
-          </div>
+          <button 
+            type="button" 
+            onClick={() => window.open(obtenerLinkWhatsAppTransferencia(), '_blank')}
+            style={{ width: '100%', background: '#25D366', color: '#fff', border: 'none', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            ENVIAR COMPROBANTE POR WHATSAPP
+          </button>
         )}
 
         {metodoPago === 'efectivo' && (
           <button 
             type="button" 
             onClick={() => window.open(obtenerLinkWhatsAppEfectivo(), '_blank')}
-            style={{ width: '100%', background: '#25D366', color: '#fff', border: 'none', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase', marginBottom: '16px' }}
+            style={{ width: '100%', background: '#000', color: '#fff', border: 'none', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase', marginBottom: '16px' }}
           >
-            VOLVER A ABRIR MI CUPÓN EN WHATSAPP
+            ABRIR SOLICITUD DE CUPÓN EN WHATSAPP
           </button>
         )}
 
         <button 
           type="button" 
           onClick={() => { window.location.href = '/'; }}
-          style={{ width: '100%', background: '#000', color: '#fff', border: 'none', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase' }}
+          style={{ width: '100%', background: '#fff', color: '#000', border: '1px solid #000', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase' }}
         >
           VOLVER AL INICIO
         </button>
