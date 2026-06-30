@@ -10,8 +10,8 @@ export const CheckoutForm = () => {
   const carrito = context?.carrito ?? [];
   const totalPrecio = context?.totalPrecio ?? 0;
   
-  // Forzamos el tipado para extraer de forma segura la función mutadora del contexto
-  const setCarrito = (context as any)?.setCarrito || (context as any)?.setCart;
+  // Extraemos dinámicamente la función mutadora del estado interno de React para vaciarlo en vivo
+  const setCarrito = (context as any)?.setCarrito || (context as any)?.setCart || (useCart() as any).setCarrito;
   
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia'); 
   
@@ -88,7 +88,7 @@ export const CheckoutForm = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
-    const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
+    const mensaje = `Hola Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -96,7 +96,7 @@ export const CheckoutForm = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
-    const mensaje = `Hola chicos de Aspen! Soy ${nombreCliente}.\n\nAcabo de realizar la transferencia por un total de $${totalPedido},00 correspondiente a mi pedido. Adjunto el comprobante de pago para su verificación.`;
+    const mensaje = `Hola Aspen! Soy ${nombreCliente}.\n\nAcabo de realizar la transferencia por un total de $${totalPedido},00 correspondiente a mi pedido. Adjunto el comprobante de pago para su verificación.`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -137,15 +137,8 @@ export const CheckoutForm = () => {
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
+    // Conectamos y disparamos la orden directo a Tiendanube
     await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
-
-    // Vaciado preventivo inmediato al registrar la orden
-    if (typeof setCarrito === 'function') {
-      setCarrito([]); 
-    }
-    localStorage.removeItem('cart');
-    localStorage.removeItem('carrito');
-    localStorage.removeItem('cartItems');
 
     setCompraExitosa(true);
     
@@ -205,27 +198,26 @@ export const CheckoutForm = () => {
           </button>
         )}
 
-        {/* Botón de Retorno con Vaciado Absoluto y Sincronizado */}
+        {/* 🛠️ FIJACIÓN ABSOLUTA: Borra la clave 'aspen_cart' real identificada en tu context */}
         <button 
           type="button" 
           onClick={(e) => {
             e.preventDefault();
             
-            // 1. Borramos el Storage local
-            localStorage.removeItem('cart');
-            localStorage.removeItem('carrito');
-            localStorage.removeItem('cartItems');
+            // Forzamos la limpieza de la memoria del storage corporativo de Aspen
+            localStorage.removeItem('aspen_cart');
             localStorage.clear(); 
 
-            // 2. Reseteamos el Contexto de React
+            // Actualizamos en caliente la UI de React
             if (typeof setCarrito === 'function') {
               setCarrito([]);
+            } else if (context && (context as any).setCarrito) {
+              (context as any).setCarrito([]);
             }
 
-            // 3. Redirección con delay para asegurar la persistencia del borrado
             setTimeout(() => {
               window.location.href = '/';
-            }, 100);
+            }, 150);
           }}
           style={{ width: '100%', background: '#fff', color: '#000', border: '1px solid #000', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase' }}
         >
@@ -242,7 +234,6 @@ export const CheckoutForm = () => {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
           
-          {/* BLOQUE 1: IDENTIFICACIÓN Y ENVÍO */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <h2 style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', borderBottom: '1px solid #000', paddingBottom: '12px', margin: 0 }}>
               1. IDENTIFICACIÓN Y ENVÍO
@@ -254,7 +245,6 @@ export const CheckoutForm = () => {
             <input type="text" placeholder="CIUDAD / LOCALIDAD" value={localidad} onChange={(e) => setLocalidad(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
           </div>
 
-          {/* BLOQUE 2: MEDIO DE PAGO */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <h2 style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', borderBottom: '1px solid #000', paddingBottom: '12px', margin: 0 }}>
               2. MEDIO DE PAGO
@@ -348,7 +338,6 @@ export const CheckoutForm = () => {
           </button>
         </div>
 
-        {/* COLUMNA DERECHA */}
         <div style={{ background: 'transparent', padding: '35px 0 max(4vw, 20px) 0', border: 'none' }}>
           <h3 style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '25px', color: '#000' }}>
             RESUMEN DEL PEDIDO ({carrito.reduce((acc, item) => acc + (item?.cantidad ?? 0), 0)})

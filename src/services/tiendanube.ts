@@ -160,7 +160,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// Conexión real de datos de pago con la API de órdenes de Tiendanube
+// 🛠️ ACTUALIZACIÓN DE CONEXIÓN REAL CON DESCUENTO DE STOCK INVENTARIO
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -169,6 +169,15 @@ export const crearOrdenTiendanube = async (
   datosTarjeta?: { marca: string; ultimosCuatro: string }
 ): Promise<boolean> => {
   try {
+    // Definimos el estado financiero real para obligar a Tiendanube a procesar el stock
+    let estadoFinanciero = 'pending'; 
+    let nombrePasarela = 'Transferencia Bancaria / Efectivo';
+
+    if (metodoPago === 'tarjeta') {
+      estadoFinanciero = 'paid'; // Tarjeta entra como aprobado automáticamente
+      nombrePasarela = datosTarjeta ? `Pasarela Nativa (${datosTarjeta.marca.toUpperCase()})` : 'Tarjeta de Crédito';
+    }
+
     const payload = {
       contact_email: datosCliente.email,
       contact_name: datosCliente.nombre,
@@ -176,20 +185,21 @@ export const crearOrdenTiendanube = async (
       shipping_address: {
         address: datosCliente.direccion,
         city: datosCliente.localidad,
-        country: 'AR'
+        country: 'AR',
+        first_name: datosCliente.nombre,
+        last_name: ''
       },
-      products: carrito.map(item => ({
-        variant_id: item.variantId,
-        quantity: item.cantidad
+      // Mapeamos de forma explícita los line_items que requiere la API v1/v2
+      items: carrito.map(item => ({
+        variant_id: Number(item.variantId),
+        quantity: Number(item.cantidad)
       })),
-      payment_method: metodoPago,
-      coupon_code: cupon ? cupon.codigo : undefined,
-      // Inyectamos la información del procesamiento de tarjeta de forma estructurada
-      gateway_name: datosTarjeta ? `Nativo (${datosTarjeta.marca.toUpperCase()})` : undefined,
-      payment_details: datosTarjeta ? {
-        brand: datosTarjeta.marca,
-        last_four_digits: datosTarjeta.ultimosCuatro
-      } : undefined
+      payment_details: {
+        method: metodoPago.toUpperCase(),
+        status: estadoFinanciero
+      },
+      gateway: nombrePasarela,
+      coupon: cupon ? { code: cupon.codigo } : undefined
     };
 
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
