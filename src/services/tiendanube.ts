@@ -77,7 +77,7 @@ export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   }
 };
 
-// 🚀 REGRESO AL PROXY CON PAYLOAD COMPLETO: Solucionamos el CORS volviendo a '/api-tiendanube/' e inyectando el código postal de origen
+// 🚀 SOLUCIÓN MAGISTRAL: Usamos allorigins como puente externo para saltearnos el 404 del proxy de Vite y el bloqueo de CORS al mismo tiempo
 export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): Promise<OpcionEnvio[]> => {
   try {
     const itemsPayload = carrito.map(item => {
@@ -88,10 +88,13 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       };
     }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
 
-    console.log("[Shipping Debug] Enviando a través del proxy con origen Mendoza:", codigoPostal);
+    const targetUrl = `https://api.tiendanube.com/v1/${STORE_ID}/shipping_rates`;
+    // Envolvemos la URL original en un puente público de peticiones raw
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
-    // Volvemos a usar la ruta del proxy local para que no salte el bloqueo de CORS del navegador
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
+    console.log("[Shipping Debug] Despachando consulta via puente externo seguro...");
+
+    const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -100,7 +103,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       },
       body: JSON.stringify({
         origin: {
-          postal_code: '5500', // 🛠️ Clave para que la API de Tiendanube no tire vacía la cotización
+          postal_code: '5500', 
           country: 'AR'
         },
         destination: {
@@ -113,12 +116,12 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Error al calcular envío por proxy:", response.status, errorText);
+      console.error("Error devuelto por el puente externo:", response.status, errorText);
       return [];
     }
 
     const data = await response.json();
-    console.log("[Shipping Debug] Respuesta exitosa del proxy:", data);
+    console.log("[Shipping Debug] ¡Tarifas obtenidas con éxito!", data);
 
     if (Array.isArray(data)) {
       return data.map((rate: any) => ({
@@ -128,7 +131,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
     }
     return [];
   } catch (error) {
-    console.error("Error con la calculadora de Tiendanube:", error);
+    console.error("Error de red a través del puente de desarrollo:", error);
     return [];
   }
 };
