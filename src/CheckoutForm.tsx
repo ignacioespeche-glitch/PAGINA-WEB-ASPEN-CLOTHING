@@ -10,6 +10,9 @@ export const CheckoutForm = () => {
   const carrito = context?.carrito ?? [];
   const totalPrecio = context?.totalPrecio ?? 0;
   
+  // 🚀 IMPORTANTE: Traemos el costo de envío guardado globalmente desde el Context
+  const costoEnvio = context?.costoEnvio ?? 0;
+  
   // Extraemos la función mutadora de forma segura casteando el contexto
   const setCarrito = (context as any)?.setCarrito || (context as any)?.setCart || (useCart() as any).setCarrito;
   
@@ -80,15 +83,21 @@ export const CheckoutForm = () => {
   }
 
   const subtotalConDescuento = Math.max(0, totalPrecio - descuentoCalculado);
-  const precioBaseCatalogo = subtotalConDescuento;
-  const precioConRecargoTarjeta = Math.round(subtotalConDescuento * 1.20); 
+  
+  // 🚀 LÓGICA DE SUMA MODIFICADA: 
+  // El precio base del catálogo ahora suma el costo de envío.
+  // El recargo del 20% de la tarjeta se aplica sobre los productos y luego se le suma el envío fijo (o según prefieras).
+  // Normalmente el recargo financiero corre sobre el total general. Lo calculamos sobre el total neto del pedido con envío incluido:
+  const precioBaseCatalogo = subtotalConDescuento + costoEnvio;
+  const precioConRecargoTarjeta = Math.round((subtotalConDescuento + costoEnvio) * 1.20); 
+  
   const montoFinalAMostrar = metodoPago === 'tarjeta' ? precioConRecargoTarjeta : precioBaseCatalogo;
 
   const obtenerLinkWhatsAppEfectivo = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
-    const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto: $${totalPedido},00`;
+    const mensaje = `Hola chicos de Aspen! Necesito el cupón / QR para pagar en Rapipago o Pago Fácil.\n\nMis datos son:\n• Nombre: ${nombreCliente}\n• Total neto (con envío): $${totalPedido},00`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -96,7 +105,7 @@ export const CheckoutForm = () => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
-    const mensaje = `Hola chicos de Aspen! Soy ${nombreCliente}.\n\nAcabo de realizar la transferencia por un total de $${totalPedido},00 correspondiente a mi pedido. Adjunto el comprobante de pago para su verificación.`;
+    const mensaje = `Hola chicos de Aspen! Soy ${nombreCliente}.\n\nAcabo de realizar la transferencia por un total de $${totalPedido},00 correspondiente a mi pedido (envío incluido). Adjunto el comprobante de pago para su verificación.`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -137,7 +146,8 @@ export const CheckoutForm = () => {
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
-    // 🚀 MODIFICACIÓN CLAVE: Obtenemos la URL de checkout dinámico generada por el puente del service
+    // Mandamos el carrito y los datos. Asegurate de que `crearOrdenTiendanube` maneje internamente 
+    // el envío o tome el costoEnvio si lo requiere su implementación actual.
     const urlCheckout = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
     // Vaciado automático en el estado y storage al registrar exitosamente
@@ -145,6 +155,7 @@ export const CheckoutForm = () => {
       setCarrito([]); 
     }
     localStorage.removeItem('aspen_cart');
+    localStorage.removeItem('aspen_costo_envio'); // Limpiamos el envío tras finalizar la compra
 
     // Si la API devolvió la URL de Checkout nativo con el carrito sincronizado, redirigimos de inmediato
     if (urlCheckout) {
@@ -184,6 +195,7 @@ export const CheckoutForm = () => {
           </h3>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método elegido:</strong> {metodoPago === 'tarjeta' ? `Tarjeta de Crédito (${marcaDetectada.toUpperCase()})` : metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Destino de entrega:</strong> {direccion}, {localidad || 'Mendoza'}</p>
+          <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Costo de Envío:</strong> ${costoEnvio.toLocaleString('es-AR')},00</p>
           <p style={{ margin: '12px 0 0 0', fontSize: '13px', fontWeight: 700, paddingTop: '12px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
             <span>TOTAL DE LA ORDEN:</span>
             <span>${montoFinalCobrado.toLocaleString('es-AR')},00</span>
@@ -334,7 +346,7 @@ export const CheckoutForm = () => {
                 <div style={{ padding: '24px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <p style={{ margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solicitud de Cupón de Cobro:</p>
                   <p style={{ margin: 0, color: '#333', lineHeight: '1.6' }}>
-                    Al confirmar tu pedido abajo, la app registrará la compra y abrirá la línea de WhatsApp corporativa para despacharte el código de barra o QR por el monto neto de <strong>${precioBaseCatalogo.toLocaleString('es-AR')},00</strong>.
+                    Al confirmar tu pedido abajo, la app registrará la compra y abrirá la línea de WhatsApp corporativa para despacharte el código de barra o QR por el monto neto de <strong>${montoFinalAMostrar.toLocaleString('es-AR')},00</strong>.
                   </p>
                 </div>
               )}
@@ -384,17 +396,28 @@ export const CheckoutForm = () => {
             {errorCupon && <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626' }}>✕ {errorCupon}</span>}
           </div>
 
+          {/* RESUMEN DE COSTOS DETALLADO */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
               <span>SUBTOTAL:</span>
               <span>${totalPrecio.toLocaleString('es-AR')},00</span>
             </div>
+            
             {descuentoCalculado > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#059669', fontWeight: 600 }}>
                 <span>DESCUENTO:</span>
                 <span>-${descuentoCalculado.toLocaleString('es-AR')},00</span>
               </div>
             )}
+
+            {/* 🚀 NUEVA LÍNEA VISUAL: Renderiza el costo del envío en el resumen si es mayor a 0 */}
+            {costoEnvio > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                <span>COSTO DE ENVÍO:</span>
+                <span>${costoEnvio.toLocaleString('es-AR')},00</span>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid #000', paddingTop: '14px' }}>
               <span>TOTAL NETO:</span>
               <span>${montoFinalAMostrar.toLocaleString('es-AR')},00</span>
