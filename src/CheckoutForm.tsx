@@ -38,7 +38,7 @@ export const CheckoutForm = () => {
   const [errorCupon, setErrorCupon] = useState('');
 
   // Estado de Compra Realizada Exitosamente
-  const [compraExitosa, setCompraExitosa] = useState(false);
+  const [compraExitosa] = useState(false);
   const [montoFinalCobrado, setMontoFinalCobrado] = useState(0);
 
   const meses = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
@@ -84,10 +84,6 @@ export const CheckoutForm = () => {
 
   const subtotalConDescuento = Math.max(0, totalPrecio - descuentoCalculado);
   
-  // 🚀 LÓGICA DE SUMA MODIFICADA: 
-  // El precio base del catálogo ahora suma el costo de envío.
-  // El recargo del 20% de la tarjeta se aplica sobre los productos y luego se le suma el envío fijo (o según prefieras).
-  // Normalmente el recargo financiero corre sobre el total general. Lo calculamos sobre el total neto del pedido con envío incluido:
   const precioBaseCatalogo = subtotalConDescuento + costoEnvio;
   const precioConRecargoTarjeta = Math.round((subtotalConDescuento + costoEnvio) * 1.20); 
   
@@ -146,32 +142,37 @@ export const CheckoutForm = () => {
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
-    // Mandamos el carrito y los datos. Asegurate de que `crearOrdenTiendanube` maneje internamente 
-    // el envío o tome el costoEnvio si lo requiere su implementación actual.
-    const urlCheckout = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
+    // Registramos la orden directa en la API de Tiendanube
+    const respuestaApi = await crearOrdenTiendanube(datosCliente, carrito, metodoPago, cuponAplicado, datosTarjetaPayload);
 
-    // Vaciado automático en el estado y storage al registrar exitosamente
-    if (typeof setCarrito === 'function') {
-      setCarrito([]); 
-    }
-    localStorage.removeItem('aspen_cart');
-    localStorage.removeItem('aspen_costo_envio'); // Limpiamos el envío tras finalizar la compra
+    if (respuestaApi === "SUCCESS") {
+      console.log("[Aspen] ¡Éxito! Orden impactada en Tiendanube.");
 
-    // Si la API devolvió la URL de Checkout nativo con el carrito sincronizado, redirigimos de inmediato
-    if (urlCheckout) {
-      window.location.href = urlCheckout;
+      // 🧼 1. VACIADO DE COMPRA EN EL FRONT-END
+      if (typeof setCarrito === 'function') {
+        setCarrito([]); 
+      }
+      localStorage.removeItem('aspen_cart');
+      localStorage.removeItem('aspen_costo_envio');
+
+      // 📲 2. EN CASO DE SER EFECTIVO, LANZAMOS EL MENSAJE AUTOMÁTICO DE WHATSAPP
+      if (metodoPago === 'efectivo') {
+        window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
+      } else if (metodoPago === 'transferencia') {
+        // Opcional por si querés que les abra el mensaje de transferencia directo
+        window.open(obtenerLinkWhatsAppTransferencia(), '_blank');
+      }
+
+      // 🏠 3. REDIRECCIÓN ABSOLUTA E INMEDIATA AL HOME PARA EVITAR RUTA ERRÓNEA
+      alert("¡Compra registrada correctamente en el panel de control!");
+      window.location.href = '/';
       return;
-    }
-
-    // Fallback nativo para pasarelas alternativas o control local por éxito interno
-    setCompraExitosa(true);
-    
-    if (metodoPago === 'efectivo') {
-      window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
+    } else {
+      alert("No se pudo sincronizar la orden con Tiendanube. Revisá los campos o la consola.");
     }
   };
 
-  // VISTA 1: PANTALLA COMPLETA DE ÉXITO POST-PAGO FORMAL
+  // VISTA 1: FALLBACK LOCAL DE ÉXITO (MANTENIDO POR RETROCOMPATIBILIDAD)
   if (compraExitosa) {
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
@@ -202,40 +203,15 @@ export const CheckoutForm = () => {
           </p>
         </div>
 
-        {metodoPago === 'transferencia' && (
-          <button 
-            type="button" 
-            onClick={() => window.open(obtenerLinkWhatsAppTransferencia(), '_blank')}
-            style={{ width: '100%', background: '#25D366', color: '#fff', border: 'none', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            ENVIAR COMPROBANTE POR WHATSAPP
-          </button>
-        )}
-
-        {metodoPago === 'efectivo' && (
-          <button 
-            type="button" 
-            onClick={() => window.open(obtenerLinkWhatsAppEfectivo(), '_blank')}
-            style={{ width: '100%', background: '#000', color: '#fff', border: 'none', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase', marginBottom: '16px' }}
-          >
-            ABRIR SOLICITUD DE CUPÓN EN WHATSAPP
-          </button>
-        )}
-
         <button 
           type="button" 
           onClick={(e) => {
             e.preventDefault();
-            localStorage.removeItem('aspen_cart');
             localStorage.clear(); 
-
             if (typeof setCarrito === 'function') {
               setCarrito([]);
             }
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 100);
+            window.location.href = '/';
           }}
           style={{ width: '100%', background: '#fff', color: '#000', border: '1px solid #000', padding: '16px', fontWeight: 700, fontSize: '11px', letterSpacing: '1.5px', cursor: 'pointer', textTransform: 'uppercase' }}
         >
@@ -410,7 +386,6 @@ export const CheckoutForm = () => {
               </div>
             )}
 
-            {/* 🚀 NUEVA LÍNEA VISUAL: Renderiza el costo del envío en el resumen si es mayor a 0 */}
             {costoEnvio > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                 <span>COSTO DE ENVÍO:</span>
