@@ -217,8 +217,9 @@ export const crearOrdenTiendanube = async (
       payment_status: metodoPago === 'tarjeta' ? 'paid' : 'pending',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
-      products: lineItemsPayload, // Duplicamos por retrocompatibilidad de la API
-      gateway: metodoPago === 'tarjeta' ? 'Mercado Pago (Simulado)' : metodoPago.toUpperCase(),
+      products: lineItemsPayload,
+      // 🚀 CAMBIO CLAVE: Usamos 'custom' para que Tiendanube acepte órdenes externas manuales
+      gateway: 'custom', 
       note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
 
