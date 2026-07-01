@@ -164,7 +164,6 @@ export const CheckoutForm = () => {
       }
 
       // 🏠 3. REDIRECCIÓN ABSOLUTA E INMEDIATA AL HOME PARA EVITAR RUTA ERRÓNEA
-      alert("¡Compra registrada correctamente en el panel de control!");
       window.location.href = '/';
       return;
     } else {
