@@ -178,34 +178,51 @@ export const crearOrdenTiendanube = async (
   datosTarjeta?: { marca: string; ultimosCuatro: string }
 ): Promise<string | null> => {
   try {
-    console.log(`[Aspen] Registrando venta directa en Tiendanube para: ${datosCliente.nombre}`);
+    console.log(`[Aspen] Enviando orden. Carrito crudo:`, carrito);
     
-    const lineItemsPayload = carrito.map(item => ({
-      variant_id: Number(item.variantId || item.id),
-      quantity: Number(item.cantidad || 1),
-      price: String(item.precio),
-      name: item.nombre
-    })).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
+    const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
+
+    const lineItemsPayload = itemsProcesables.map((item: any) => {
+      // 🛡️ CORRECCIÓN CLAVE: Extraemos de forma segura el ID de la variante y el ID del producto padre
+      const variantId = item.variantId || item.variant_id || item.id;
+      
+      // Buscamos el ID del producto principal. Si tu carrito no lo tiene, usamos el mismo de la variante para que no sea 0
+      const productId = item.productId || item.product_id || item.parentId || item.id || variantId;
+      
+      const cantidad = item.cantidad || item.quantity || 1;
+      const precioLimpio = parseFloat(item.precio || item.price || "0");
+
+      return {
+        product_id: Number(productId), // Evita que viaje en 0 y rompa la validación 422
+        variant_id: Number(variantId),
+        quantity: Number(cantidad),
+        price: isNaN(precioLimpio) ? "0.00" : precioLimpio.toFixed(2)
+      };
+    }).filter((item: any) => !isNaN(item.variant_id) && item.variant_id > 0);
+
+    console.log(`[Aspen] Payload estructurado enviado a Tiendanube:`, lineItemsPayload);
 
     if (lineItemsPayload.length === 0) {
-      console.error("[Aspen] El carrito está vacío o las variantes no son válidas.");
+      console.error("[Aspen] Error: No hay productos válidos para enviar.");
       return null;
     }
 
     const orderBody = {
-      contact_email: datosCliente.email.trim(),
+      contact_email: datosCliente.email.trim().toLowerCase(),
       contact_name: datosCliente.nombre.trim(),
-      contact_phone: datosCliente.telefono.trim(),
+      contact_phone: datosCliente.telefono.trim() || "261000000", 
       shipping_address: {
-        address: datosCliente.direccion,
-        city: datosCliente.localidad || 'Mendoza',
-        country: 'AR'
+        address: datosCliente.direccion.trim(),
+        city: datosCliente.localidad?.trim() || 'Mendoza',
+        province: 'Mendoza',
+        country: 'AR',
+        zipcode: '5500'
       },
       payment_status: metodoPago === 'tarjeta' ? 'paid' : 'pending',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
-      gateway: metodoPago === 'tarjeta' ? 'Mercado Pago (Simulado)' : metodoPago,
-      note: `Pedido desde la web Aspen. Pago elegido: ${metodoPago.toUpperCase()}. ${datosTarjeta ? `Tarjeta: ${datosTarjeta.marca} * * * *${datosTarjeta.ultimosCuatro}` : ''}`
+      gateway: metodoPago === 'tarjeta' ? 'Mercado Pago (Simulado)' : metodoPago.toUpperCase(),
+      note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
 
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
@@ -220,16 +237,16 @@ export const crearOrdenTiendanube = async (
 
     if (response.ok) {
       const orderData = await response.json();
-      console.log(`[Aspen] Orden creada de forma exitosa. ID de Venta: #${orderData.id}`);
+      console.log(`[Aspen] ¡ÉXITO TOTAL! Orden creada en el panel. ID: #${orderData.id}`);
       return "SUCCESS";
     } else {
       const errorText = await response.text();
-      console.error("[Error Creación Orden] Tiendanube rechazó la orden:", errorText);
+      console.error(`[Error Tiendanube API ${response.status}]`, errorText);
       return null;
     }
 
   } catch (error) {
-    console.error("Error crítico de red procesando la orden local de venta:", error);
+    console.error("Error de red crítico procesando la orden:", error);
     return null;
   }
 };
