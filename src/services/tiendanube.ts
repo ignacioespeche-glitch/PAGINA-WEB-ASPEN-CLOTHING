@@ -180,11 +180,7 @@ export const crearOrdenTiendanube = async (
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
     
-    // Imprimimos en consola para que veas qué propiedades reales tienen tus productos en el Front
-    console.log("[Aspen Diagnóstico] Productos recibidos del carrito:", itemsProcesables);
-
     const lineItemsPayload = itemsProcesables.map((item: any) => {
-      // Intentamos capturar el ID de todas las formas posibles que use tu Front-End
       const rawVariantId = item.variantId || item.variant_id || item.id || (item.variant && item.variant.id);
       const rawProductId = item.productId || item.product_id || item.parentId || rawVariantId;
       
@@ -201,8 +197,7 @@ export const crearOrdenTiendanube = async (
       };
     });
 
-    console.log("[Aspen Payload] Enviando este arreglo a Tiendanube:", lineItemsPayload);
-
+    // 🛡️ ELIMINAMOS EL CAMPO GATEWAY PARA QUE EL ENTORNO TOME EL PAGO ESTÁNDAR AUTOMÁTICAMENTE
     const orderBody = {
       contact_email: datosCliente.email.trim().toLowerCase(),
       contact_name: datosCliente.nombre.trim(),
@@ -218,8 +213,6 @@ export const crearOrdenTiendanube = async (
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
-      // 🚀 CAMBIO FINAL: Usamos el gateway nativo que acepta Tiendanube para pedidos manuales
-      gateway: 'pasarela_manual', 
       note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
 
