@@ -170,6 +170,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
 };
 
 // IMPACTA DIRECTO EN EL PANEL DE VENTAS REALES
+// IMPACTA DIRECTO EN EL PANEL DE VENTAS REALES Y PREVIENE ERRORES DE LLAVES
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -197,8 +198,6 @@ export const crearOrdenTiendanube = async (
       };
     });
 
-    // 🛡️ ELIMINAMOS EL CAMPO GATEWAY PARA QUE EL ENTORNO TOME EL PAGO ESTÁNDAR AUTOMÁTICAMENTE
-    // Armamos el objeto del cliente con sus datos reales
     const customerPayload = {
       name: datosCliente.nombre.trim(),
       email: datosCliente.email.trim().toLowerCase(),
@@ -206,9 +205,7 @@ export const crearOrdenTiendanube = async (
     };
 
     const orderBody = {
-      // 🚀 AGREGAMOS ESTE OBJETO PARA QUE TIENDANUBE REGISTRE AL CLIENTE CORRECTAMENTE
       customer: customerPayload, 
-      
       contact_email: datosCliente.email.trim().toLowerCase(),
       contact_name: datosCliente.nombre.trim(),
       contact_phone: datosCliente.telefono.trim() || "261000000", 
@@ -239,6 +236,44 @@ export const crearOrdenTiendanube = async (
     if (response.ok) {
       await response.json();
       console.log("[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL DE TIENDANUBE!");
+
+      // 🚀 FORZAR DESCUENTO DE STOCK MANUAL DIRECTO EN EL CATÁLOGO
+      for (const item of lineItemsPayload) {
+        if (item.product_id && item.variant_id) {
+          try {
+            // 1. Consultamos el stock real que tiene la variante en este segundo
+            const varRes = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
+              headers: { 
+                'Authentication': `bearer ${ACCESS_TOKEN}`,
+                'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+              }
+            });
+
+            if (varRes.ok) {
+              const varianteData = await varRes.json();
+              const stockActual = varianteData.stock !== null ? Number(varianteData.stock) : 0;
+              
+              // 2. Le restamos la cantidad que acaba de comprar el cliente
+              const nuevoStock = Math.max(0, stockActual - item.quantity);
+
+              // 3. Le mandamos el PUT a Tiendanube para actualizar el número en el panel
+              await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
+                method: 'PUT',
+                headers: {
+                  'Authentication': `bearer ${ACCESS_TOKEN}`,
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+                },
+                body: JSON.stringify({ stock: nuevoStock })
+              });
+              console.log(`[Stock] Producto ${item.product_id} actualizado con éxito a: ${nuevoStock}`);
+            }
+          } catch (err) {
+            console.error("Error al descontar stock manualmente:", err);
+          }
+        }
+      }
+
       return "SUCCESS";
     } else {
       const errorText = await response.text();
