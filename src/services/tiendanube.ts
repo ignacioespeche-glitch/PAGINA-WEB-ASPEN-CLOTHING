@@ -218,8 +218,8 @@ export const crearOrdenTiendanube = async (
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
-      // 🚀 CAMBIO CLAVE: Usamos 'custom' para que Tiendanube acepte órdenes externas manuales
-      gateway: 'custom', 
+      // 🚀 CAMBIO FINAL: Usamos el gateway nativo que acepta Tiendanube para pedidos manuales
+      gateway: 'pasarela_manual', 
       note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
 
