@@ -198,7 +198,17 @@ export const crearOrdenTiendanube = async (
     });
 
     // 🛡️ ELIMINAMOS EL CAMPO GATEWAY PARA QUE EL ENTORNO TOME EL PAGO ESTÁNDAR AUTOMÁTICAMENTE
+    // Armamos el objeto del cliente con sus datos reales
+    const customerPayload = {
+      name: datosCliente.nombre.trim(),
+      email: datosCliente.email.trim().toLowerCase(),
+      phone: datosCliente.telefono.trim() || "261000000"
+    };
+
     const orderBody = {
+      // 🚀 AGREGAMOS ESTE OBJETO PARA QUE TIENDANUBE REGISTRE AL CLIENTE CORRECTAMENTE
+      customer: customerPayload, 
+      
       contact_email: datosCliente.email.trim().toLowerCase(),
       contact_name: datosCliente.nombre.trim(),
       contact_phone: datosCliente.telefono.trim() || "261000000", 
