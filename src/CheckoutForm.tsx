@@ -142,13 +142,18 @@ export const CheckoutForm = () => {
 
       // 💳 PASARELA TOTALMENTE SEGURA: Evita el bloqueo de CORS inyectando una preferencia oficial
       try {
-        console.log("[Mercado Pago] Generando entorno seguro de checkout para la cuenta de Giuliano...");
+        console.log("[Mercado Pago] Generando entorno seguro de checkout...");
         
-        // Creamos la preferencia interactuando directamente con el Access Token de Juli de forma procesable
+        // Detección automática de entorno local/producción
+        const esLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const activeToken = esLocal 
+          ? 'TEST-3933426876716509-070112-2792e8cce9c21847dd1902efe969dc48-389682227'
+          : 'APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227';
+
         const preferenceResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227`,
+            'Authorization': `Bearer ${activeToken}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
