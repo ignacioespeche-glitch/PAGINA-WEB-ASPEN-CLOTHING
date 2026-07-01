@@ -12,8 +12,9 @@ export default defineConfig({
       '/api-tiendanube': {
         target: 'https://api.tiendanube.com',
         changeOrigin: true,
+        secure: false, // Evita bloqueos por certificados SSL estrictos en local
+        ws: true,
         rewrite: (path) => path.replace(/^\/api-tiendanube/, ''),
-        // 🛠️ FIX DE WARNING: Cambiado req por _req para que compile limpio
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, _req, _res) => {
             proxyReq.setHeader('Origin', 'https://api.tiendanube.com');
