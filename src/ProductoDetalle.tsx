@@ -123,7 +123,7 @@ export const ProductoDetalle = () => {
   const valorCuota = Math.round(precioListaConAumento / 3);
 
   const esPrendaForzada = requiereTallesCompletos(producto.name?.es || '') && (!producto.variants || producto.variants.length <= 1);
-  const stockMostrar = (varianteReal?.stock === 0) ? 0 : (esPrendaForzada ? 5 : (varianteReal?.stock ?? 0));
+  const stockMostrar = varianteReal && typeof varianteReal.stock === 'number' ? varianteReal.stock : 0;
 
   const yaAgregadoAlCarrito = carrito?.some(item => item.id === producto.id) ?? false;
 
