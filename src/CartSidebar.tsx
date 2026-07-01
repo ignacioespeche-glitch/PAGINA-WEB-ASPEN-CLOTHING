@@ -84,7 +84,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
 
   const recomendaciones = obtenerRecommendations();
 
-  // Lógica interactiva con la API de Tiendanube para cotizar el envío real
   const handleCalcularEnvio = async () => {
     setMensajeErrorEnvio('');
     if (!codigoPostal.trim()) {
@@ -97,7 +96,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
       const tarifas = await calcularEnvioReal(codigoPostal, carrito);
       if (tarifas && tarifas.length > 0) {
         setOpcionesEnvio(tarifas);
-        // Por defecto seleccionamos el costo de la primera opción que devuelva Tiendanube
         setCostoEnvio(tarifas[0].price);
         setEnvioCalculado(true);
       } else {
@@ -126,14 +124,16 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
 
   const handleRestarCantidad = (item: any) => {
     if (item.cantidad <= 1) return;
-    agregarAlCarrito({ ...item, cantidad: -1 }, item.stockMaximo || 99);
-    setEnvioCalculado(false); // Forzamos a recalcular si cambia el peso/volumen del carrito
+    const limiteStock = item.stockMaximo || item.stock || (item as any).stock || 99;
+    agregarAlCarrito({ ...item, cantidad: -1 }, limiteStock);
+    setEnvioCalculado(false); 
   };
 
   const handleSumarCantidad = (item: any) => {
-    if (item.cantidad >= (item.stockMaximo || 99)) return;
-    agregarAlCarrito({ ...item, cantidad: 1 }, item.stockMaximo || 99);
-    setEnvioCalculado(false); // Forzamos a recalcular si cambia el peso/volumen del carrito
+    const limiteStock = item.stockMaximo || item.stock || (item as any).stock || 99;
+    if (item.cantidad >= limiteStock) return;
+    agregarAlCarrito({ ...item, cantidad: 1 }, limiteStock);
+    setEnvioCalculado(false); 
   };
 
   if (!isCartOpen) return null;
@@ -153,31 +153,45 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
           ) : (
             <>
               <div className="cart-lista-prendas" style={{ borderTop: '1px solid #000000', paddingTop: '20px' }}>
-                {carrito.map((item, index) => (
-                  <div key={index} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px', paddingBottom: '20px', borderBottom: '1px solid #000000', backgroundColor: 'transparent', width: '100%', boxSizing: 'border-box' }}>
-                    
-                    <div style={{ width: '60px', height: '80px', minWidth: '60px', minHeight: '80px', maxWidth: '60px', maxHeight: '80px', overflow: 'hidden', flexShrink: 0, display: 'block', margin: 0, padding: 0, backgroundColor: 'transparent' }}>
-                      <img src={item.imagen} alt={item.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
-                    </div>
+                {carrito.map((item: any, index) => {
+                  const maxStock = item.stockMaximo || item.stock || (item as any).stock || 99;
+                  const estaAlLimite = item.cantidad >= maxStock;
 
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div className="cart-item-fila-superior" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#000' }}>{item.nombre} ({item.talle})</p>
-                        <button className="btn-borrar-item-nuevo" onClick={() => { removerDelCarrito(item.id, item.talle); setEnvioCalculado(false); }}>Borrar</button>
-                      </div>
+                  return (
+                    <div key={index} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px', paddingBottom: '20px', borderBottom: '1px solid #000000', backgroundColor: 'transparent', width: '100%', boxSizing: 'border-box' }}>
                       
-                      <div className="cart-item-acciones-precio" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <div className="selector-cantidad-caja mini-contador">
-                          <button onClick={() => handleRestarCantidad(item)} disabled={item.cantidad <= 1}>-</button>
-                          <span>{item.cantidad}</span>
-                          <button onClick={() => handleSumarCantidad(item)} disabled={item.cantidad >= (item.stockMaximo || 99)}>+</button>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#000', letterSpacing: '0.5px' }}>${(item.precio * item.cantidad).toLocaleString('es-AR')},00</p>
+                      <div style={{ width: '60px', height: '80px', minWidth: '60px', minHeight: '80px', maxWidth: '60px', maxHeight: '80px', overflow: 'hidden', flexShrink: 0, display: 'block', margin: 0, padding: 0, backgroundColor: 'transparent' }}>
+                        <img src={item.imagen} alt={item.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
                       </div>
-                    </div>
 
-                  </div>
-                ))}
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div className="cart-item-fila-superior" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                          <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#000' }}>{item.nombre} ({item.talle})</p>
+                          <button className="btn-borrar-item-nuevo" onClick={() => { removerDelCarrito(item.id, item.talle); setEnvioCalculado(false); }}>Borrar</button>
+                        </div>
+                        
+                        <div className="cart-item-acciones-precio" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <div className="selector-cantidad-caja mini-contador">
+                            <button onClick={() => handleRestarCantidad(item)} disabled={item.cantidad <= 1}>-</button>
+                            <span>{item.cantidad}</span>
+                            <button 
+                              onClick={() => handleSumarCantidad(item)} 
+                              disabled={estaAlLimite}
+                              style={{
+                                cursor: estaAlLimite ? 'not-allowed' : 'pointer',
+                                opacity: estaAlLimite ? 0.3 : 1
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#000', letterSpacing: '0.5px' }}>${(item.precio * item.cantidad).toLocaleString('es-AR')},00</p>
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })}
               </div>
 
               {recomendaciones.length > 0 && (
@@ -190,6 +204,10 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                       const fotoUrl = prod?.images && prod.images.length > 0 ? prod.images[0].src : '';
                       const talleDefecto = primeraVariante?.options && primeraVariante.options.length > 0 ? primeraVariante.options[0] : 'Único';
                       const variantIdReal = primeraVariante?.id ? Number(primeraVariante.id) : 0;
+                      
+                      const stockRecomendado = primeraVariante?.stock !== undefined && primeraVariante.stock !== null ? Number(primeraVariante.stock) : 5;
+                      const itemYaAgregado = carrito.find(x => x.id === prod.id && x.talle === talleDefecto);
+                      const sinStockRecomendado = stockRecomendado <= 0 || (itemYaAgregado && itemYaAgregado.cantidad >= stockRecomendado);
 
                       return (
                         <div key={prod.id} className="cross-selling-item">
@@ -199,7 +217,9 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                             <p className="cross-selling-precio">${precioBase.toLocaleString('es-AR')},00</p>
                             <button 
                               className="btn-cross-agregar"
+                              disabled={sinStockRecomendado}
                               onClick={() => {
+                                if (sinStockRecomendado) return;
                                 agregarAlCarrito({
                                   id: prod.id,
                                   nombre: prod.name?.es || 'ASPEN ITEM',
@@ -208,11 +228,15 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                                   talle: talleDefecto,
                                   variantId: variantIdReal,
                                   cantidad: 1
-                                }, primeraVariante?.stock || 5);
+                                }, stockRecomendado);
                                 setEnvioCalculado(false);
                               }}
+                              style={{
+                                cursor: sinStockRecomendado ? 'not-allowed' : 'pointer',
+                                opacity: sinStockRecomendado ? 0.3 : 1
+                              }}
                             >
-                              + AGREGAR
+                              {sinStockRecomendado ? 'SIN STOCK' : '+ AGREGAR'}
                             </button>
                           </div>
                         </div>
@@ -222,7 +246,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                 </div>
               )}
 
-              {/* 🚀 NUEVA SECCIÓN: CALCULADORA DE ENVÍOS OBLIGATORIA */}
               <div className="cart-shipping-calculator" style={{ borderTop: '1px solid #000', paddingTop: '20px', marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <h3 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: 0, color: '#000' }}>
                   CALCULAR COSTO DE ENVÍO
@@ -248,7 +271,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                   </button>
                 </div>
 
-                {/* Feedback interactivo de tarifas reales de Tiendanube */}
                 {envioCalculado && opcionesEnvio.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#fafafa', padding: '12px', border: '1px solid #eee' }}>
                     {opcionesEnvio.map((opcion, i) => (
@@ -276,7 +298,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
                 )}
               </div>
 
-              {/* RESUMEN DE VALORES */}
               <div className="cart-resumen-valores" style={{ marginTop: '20px', borderTop: '1px solid #000', paddingTop: '15px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
                   <span>SUBTOTAL:</span>
@@ -299,7 +320,6 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
 
         {carrito.length > 0 && (
           <div className="cart-footer-nuevo">
-            {/* El botón se bloquea visualmente y cambia su estilo si no calcularon el envío */}
             <button 
               className="btn-finalizar-compra-unificado" 
               onClick={handleFinalizarCompra}

@@ -219,7 +219,7 @@ export const crearOrdenTiendanube = async (
         country: 'AR',
         zipcode: '5500'
       },
-      payment_status: metodoPago === 'tarjeta' ? 'paid' : 'pending',
+      payment_status: 'paid',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
