@@ -178,29 +178,21 @@ export const crearOrdenTiendanube = async (
   datosTarjeta?: { marca: string; ultimosCuatro: string }
 ): Promise<string | null> => {
   try {
-    console.log(`[Aspen] Enviando orden. Carrito crudo:`, carrito);
-    
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
 
     const lineItemsPayload = itemsProcesables.map((item: any) => {
-      // 🛡️ CORRECCIÓN CLAVE: Extraemos de forma segura el ID de la variante y el ID del producto padre
       const variantId = item.variantId || item.variant_id || item.id;
-      
-      // Buscamos el ID del producto principal. Si tu carrito no lo tiene, usamos el mismo de la variante para que no sea 0
       const productId = item.productId || item.product_id || item.parentId || item.id || variantId;
-      
       const cantidad = item.cantidad || item.quantity || 1;
       const precioLimpio = parseFloat(item.precio || item.price || "0");
 
       return {
-        product_id: Number(productId), // Evita que viaje en 0 y rompa la validación 422
+        product_id: Number(productId),
         variant_id: Number(variantId),
         quantity: Number(cantidad),
         price: isNaN(precioLimpio) ? "0.00" : precioLimpio.toFixed(2)
       };
     }).filter((item: any) => !isNaN(item.variant_id) && item.variant_id > 0);
-
-    console.log(`[Aspen] Payload estructurado enviado a Tiendanube:`, lineItemsPayload);
 
     if (lineItemsPayload.length === 0) {
       console.error("[Aspen] Error: No hay productos válidos para enviar.");
@@ -236,8 +228,7 @@ export const crearOrdenTiendanube = async (
     });
 
     if (response.ok) {
-      const orderData = await response.json();
-      console.log(`[Aspen] ¡ÉXITO TOTAL! Orden creada en el panel. ID: #${orderData.id}`);
+      await response.json(); // Leemos la respuesta de Tiendanube sin guardarla en variables huérfanas
       return "SUCCESS";
     } else {
       const errorText = await response.text();
@@ -246,7 +237,7 @@ export const crearOrdenTiendanube = async (
     }
 
   } catch (error) {
-    console.error("Error de red crítico procesando la orden:", error);
+    console.error("Error crítico:", error);
     return null;
   }
 };
