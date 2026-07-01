@@ -182,7 +182,7 @@ export const crearOrdenTiendanube = async (
     
     const lineItemsPayload = itemsProcesables.map((item: any) => {
       const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id);
-const rawProductId = item.id || item.productId || item.product_id || item.parentId;
+      const rawProductId = item.id || item.productId || item.product_id || item.parentId;
       
       const variantId = Number(rawVariantId);
       const productId = Number(rawProductId);
