@@ -2,7 +2,7 @@
 
 const STORE_ID = '3180620';
 // Tu token actual intacto, seguro y sin tocar
-const ACCESS_TOKEN = 'bf08a938bccb39b7bb645e9f8a3c3d0b0033ffe4'; 
+const ACCESS_TOKEN = '2ba64b9dcf174e0a62f9536806421c518b112558'; 
 
 export interface TiendanubeProducto {
   id: number;
