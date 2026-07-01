@@ -31,7 +31,7 @@ export const CheckoutForm = () => {
   const [cuotas, setCuotas] = useState('1'); 
 
   // Estado para capturar errores de la pasarela sin usar alertas feas
-  const [errorPasarela, setErrorPasarela] = useState(''); // 👈 NUEVO ESTADO DE ERROR ESTÉTICO
+  const [errorPasarela, setErrorPasarela] = useState(''); 
 
   // Estados del sistema de cupones
   const [cuponInput, setCuponInput] = useState('');
@@ -119,7 +119,7 @@ export const CheckoutForm = () => {
 
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorPasarela(''); // Limpiamos errores previos al enviar
+    setErrorPasarela(''); 
     
     if (!email.trim() || !nombre.trim() || !direccion.trim()) {
       setErrorPasarela("POR FAVOR COMPLETA LOS CAMPOS OBLIGATORIOS DE ENVÍO.");
@@ -143,7 +143,7 @@ export const CheckoutForm = () => {
       try {
         console.log("[Mercado Pago] Tokenizando plástico de forma segura...");
         const mpInstance = (window as any).MercadoPago ? new (window as any).MercadoPago('APP_USR-0f455e94-597e-4163-90a9-fb8e0d44be85') : null;
-        let tokenDeTarjeta = "simulated_token_ok";
+        let tokenDeTarjeta = "";
 
         if (mpInstance) {
           const tokenResult = await mpInstance.createCardToken({
@@ -158,8 +158,12 @@ export const CheckoutForm = () => {
             tokenDeTarjeta = tokenResult.id;
           } else {
             setErrorPasarela("TARJETA RECHAZADA. VERIFIQUE LOS DATOS E INTENTE NUEVAMENTE.");
-            return;
+            return; // 🛑 FRENA ACÁ: No regala la orden en Tiendanube
           }
+        } else {
+          // Si no está el script global cargado todavía en el navegador, tiramos aviso preventivo
+          setErrorPasarela("ERROR INTERNO: NO SE PUDO CARGAR EL CONFIGURADOR DE MERCADO PAGO.");
+          return;
         }
 
         const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
@@ -178,13 +182,14 @@ export const CheckoutForm = () => {
           })
         });
 
-        // ⚠️ EN TORNO LOCAL IGNORAMOS EL BLOQUEO DE CORS PARA PODER REGISTRAR LA ORDEN IGUAL
-        if (!mpResponse.ok && mpInstance) {
-          console.warn("[Mercado Pago] El servidor bloqueó la consulta de tarjeta por políticas CORS externas.");
+        if (!mpResponse.ok) {
+          setErrorPasarela("EL PAGO FUE RECHAZADO POR LA ENTIDAD BANCARIA O FONDOS INSUFICIENTES.");
+          return; // 🛑 FRENA ACÁ
         }
       } catch (mpError) {
         console.error("[Mercado Pago] Captura de restricción CORS local:", mpError);
-        // Evitamos cortar el flujo localmente para que puedas testear el circuito de Tiendanube completo
+        setErrorPasarela("ERROR EN LA PASARELA DE PAGO: NO SE PUDO CONFIGURAR EL COBRO SEGURO.");
+        return; // 🛑 FRENA ACÁ: Bloqueo estricto por seguridad en caso de fallo de red/CORS
       }
     }
 
@@ -380,7 +385,6 @@ export const CheckoutForm = () => {
             </div>
           </div>
 
-          {/* ⚠️ MENSAJE DE ERROR ESTILIZADO ABAJO DEL MEDIO DE PAGO */}
           {errorPasarela && (
             <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626', letterSpacing: '1px', textTransform: 'uppercase', marginTop: '10px', display: 'block' }}>
               ✕ {errorPasarela}
