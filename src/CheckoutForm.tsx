@@ -121,7 +121,8 @@ export const CheckoutForm = () => {
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !nombre || !direccion) {
+    // Validamos manualmente para evitar bloqueos fantasmas del navegador
+    if (!email.trim() || !nombre.trim() || !direccion.trim()) {
       alert("Por favor completa los campos obligatorios de identificación y envío primero.");
       return;
     }
@@ -159,7 +160,6 @@ export const CheckoutForm = () => {
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
       } else if (metodoPago === 'transferencia') {
-        // Opcional por si querés que les abra el mensaje de transferencia directo
         window.open(obtenerLinkWhatsAppTransferencia(), '_blank');
       }
 
@@ -232,10 +232,10 @@ export const CheckoutForm = () => {
             <h2 style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', borderBottom: '1px solid #000', paddingBottom: '12px', margin: 0 }}>
               1. IDENTIFICACIÓN Y ENVÍO
             </h2>
-            <input type="email" placeholder="EMAIL *" required value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
-            <input type="text" placeholder="NOMBRE COMPLETO *" required value={nombre} onChange={(e) => setNombre(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
+            <input type="email" placeholder="EMAIL *" value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
+            <input type="text" placeholder="NOMBRE COMPLETO *" value={nombre} onChange={(e) => setNombre(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
             <input type="text" placeholder="TELÉFONO" value={telefono} onChange={(e) => setTelefono(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
-            <input type="text" placeholder="DIRECCIÓN Y NÚMERO *" required value={direccion} onChange={(e) => setDireccion(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
+            <input type="text" placeholder="DIRECCIÓN Y NÚMERO *" value={direccion} onChange={(e) => setDireccion(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
             <input type="text" placeholder="CIUDAD / LOCALIDAD" value={localidad} onChange={(e) => setLocalidad(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
           </div>
 
