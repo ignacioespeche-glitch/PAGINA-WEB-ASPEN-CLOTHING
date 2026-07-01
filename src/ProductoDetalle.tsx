@@ -119,7 +119,6 @@ export const ProductoDetalle = () => {
   const priceString = varianteReal?.price || '0';
   const precioNumerico = parseFloat(priceString);
 
-  // NUEVA MATEMÁTICA INTERNA PARA EL DETALLE INDIVIDUAL
   const precioListaConAumento = Math.round(precioNumerico * 1.20);
   const valorCuota = Math.round(precioListaConAumento / 3);
 
@@ -127,6 +126,10 @@ export const ProductoDetalle = () => {
   const stockMostrar = (varianteReal?.stock === 0) ? 0 : (esPrendaForzada ? 5 : (varianteReal?.stock ?? 0));
 
   const yaAgregadoAlCarrito = carrito?.some(item => item.id === producto.id) ?? false;
+
+  const itemExistenteEnCarrito = carrito.find(item => item.id === producto.id && item.talle === talleElegido);
+  const cantidadYaAgregada = itemExistenteEnCarrito ? itemExistenteEnCarrito.cantidad : 0;
+  const stockRestanteDisponible = Math.max(0, stockMostrar - cantidadYaAgregada);
 
   const handleCambiarTalle = (nuevoTalle: string) => {
     setTalleElegido(nuevoTalle);
@@ -142,16 +145,8 @@ export const ProductoDetalle = () => {
   };
 
   const handleAgregar = () => {
-    if (stockMostrar === 0 || cantidad > stockMostrar) return;
+    if (stockMostrar === 0 || cantidad > stockMostrar || cantidad > stockRestanteDisponible) return;
     
-    const itemExistente = carrito.find(item => item.id === producto.id && item.talle === talleElegido);
-    const cantidadActual = itemExistente ? itemExistente.cantidad : 0;
-
-    if (cantidadActual >= stockMostrar) {
-      alert(`No podés agregar más unidades. El stock máximo disponible es de ${stockMostrar} prendas.`);
-      return;
-    }
-
     agregarAlCarrito({
       id: producto.id,
       variantId: varianteReal ? varianteReal.id : 0, 
@@ -162,6 +157,10 @@ export const ProductoDetalle = () => {
       imagen: producto.images && producto.images.length > 0 ? producto.images[0].src : ''
     }, stockMostrar);
   };
+
+  const btnMenosDeshabilitado = stockMostrar === 0 || cantidad <= 1;
+  const btnMasDeshabilitado = stockMostrar === 0 || cantidad >= stockRestanteDisponible || cantidad >= stockMostrar;
+  const btnAgregarDeshabilitado = stockMostrar === 0 || stockRestanteDisponible <= 0;
 
   return (
     <div className="detalle-wrapper">
@@ -187,7 +186,6 @@ export const ProductoDetalle = () => {
       <div className="detalle-info-seccion">
         <h1 className="detalle-titulo">{producto.name?.es || 'ASPEN ITEM'}</h1>
         
-        {/* MODIFICACIÓN: Desglose completo de precios idéntico a Moscú Showroom */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', margin: '15px 0 25px 0', fontFamily: 'Inter, sans-serif' }}>
           <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through' }}>
             ${precioListaConAumento.toLocaleString('es-AR')},00 ARS
@@ -227,26 +225,38 @@ export const ProductoDetalle = () => {
         <div className="detalle-bloque-accion">
           <div className="selector-cantidad-caja">
             <button 
-              disabled={stockMostrar === 0 || cantidad <= 1} 
+              disabled={btnMenosDeshabilitado} 
               onClick={() => setCantidad(Math.max(1, cantidad - 1))}
+              style={{
+                cursor: btnMenosDeshabilitado ? 'not-allowed' : 'pointer',
+                opacity: btnMenosDeshabilitado ? 0.3 : 1
+              }}
             >
               -
             </button>
             <span>{stockMostrar === 0 ? 0 : cantidad}</span>
             <button 
-              disabled={stockMostrar === 0 || cantidad >= stockMostrar}
+              disabled={btnMasDeshabilitado}
               onClick={() => setCantidad(cantidad + 1)}
+              style={{
+                cursor: btnMasDeshabilitado ? 'not-allowed' : 'pointer',
+                opacity: btnMasDeshabilitado ? 0.3 : 1
+              }}
             >
               +
             </button>
           </div>
           
           <button 
-            className={`btn-agregar-full ${stockMostrar === 0 ? 'sin-stock-bloqueado' : ''}`} 
+            className={`btn-agregar-full ${btnAgregarDeshabilitado ? 'sin-stock-bloqueado' : ''}`} 
             onClick={handleAgregar}
-            disabled={stockMostrar === 0}
+            disabled={btnAgregarDeshabilitado}
+            style={{
+              cursor: btnAgregarDeshabilitado ? 'not-allowed' : 'pointer',
+              opacity: btnAgregarDeshabilitado ? 0.5 : 1
+            }}
           >
-            {stockMostrar === 0 ? 'SIN STOCK' : 'AGREGAR AL CARRITO'}
+            {stockMostrar === 0 ? 'SIN STOCK' : stockRestanteDisponible <= 0 ? 'MÁXIMO EN CARRITO' : 'AGREGAR AL CARRITO'}
           </button>
         </div>
 
