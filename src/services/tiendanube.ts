@@ -179,25 +179,29 @@ export const crearOrdenTiendanube = async (
 ): Promise<string | null> => {
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
+    
+    // Imprimimos en consola para que veas qué propiedades reales tienen tus productos en el Front
+    console.log("[Aspen Diagnóstico] Productos recibidos del carrito:", itemsProcesables);
 
     const lineItemsPayload = itemsProcesables.map((item: any) => {
-      const variantId = item.variantId || item.variant_id || item.id;
-      const productId = item.productId || item.product_id || item.parentId || item.id || variantId;
-      const cantidad = item.cantidad || item.quantity || 1;
+      // Intentamos capturar el ID de todas las formas posibles que use tu Front-End
+      const rawVariantId = item.variantId || item.variant_id || item.id || (item.variant && item.variant.id);
+      const rawProductId = item.productId || item.product_id || item.parentId || rawVariantId;
+      
+      const variantId = Number(rawVariantId);
+      const productId = Number(rawProductId);
+      const cantidad = Number(item.cantidad || item.quantity || 1);
       const precioLimpio = parseFloat(item.precio || item.price || "0");
 
       return {
-        product_id: Number(productId),
-        variant_id: Number(variantId),
-        quantity: Number(cantidad),
+        product_id: isNaN(productId) ? 0 : productId,
+        variant_id: isNaN(variantId) ? 0 : variantId,
+        quantity: isNaN(cantidad) ? 1 : cantidad,
         price: isNaN(precioLimpio) ? "0.00" : precioLimpio.toFixed(2)
       };
-    }).filter((item: any) => !isNaN(item.variant_id) && item.variant_id > 0);
+    });
 
-    if (lineItemsPayload.length === 0) {
-      console.error("[Aspen] Error: No hay productos válidos para enviar.");
-      return null;
-    }
+    console.log("[Aspen Payload] Enviando este arreglo a Tiendanube:", lineItemsPayload);
 
     const orderBody = {
       contact_email: datosCliente.email.trim().toLowerCase(),
@@ -213,6 +217,7 @@ export const crearOrdenTiendanube = async (
       payment_status: metodoPago === 'tarjeta' ? 'paid' : 'pending',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
+      products: lineItemsPayload, // Duplicamos por retrocompatibilidad de la API
       gateway: metodoPago === 'tarjeta' ? 'Mercado Pago (Simulado)' : metodoPago.toUpperCase(),
       note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
@@ -228,7 +233,8 @@ export const crearOrdenTiendanube = async (
     });
 
     if (response.ok) {
-      await response.json(); // Leemos la respuesta de Tiendanube sin guardarla en variables huérfanas
+      await response.json();
+      console.log("[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL DE TIENDANUBE!");
       return "SUCCESS";
     } else {
       const errorText = await response.text();
