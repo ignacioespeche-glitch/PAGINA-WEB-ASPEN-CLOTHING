@@ -141,7 +141,7 @@ export const CheckoutForm = () => {
         cuotas: cuotas
       };
 
-      // 💳 PASARELA TOTALMENTE SEGURA: Evita el bloqueo de CORS inyectando una preferencia oficial
+      // 💳 PASARELA MODIFICADA CON PROXY SEGURO PARA ELIMINAR EL 404
       try {
         console.log("[Mercado Pago] Generando entorno seguro de checkout...");
         
@@ -151,7 +151,8 @@ export const CheckoutForm = () => {
           ? 'TEST-3933426876716509-070112-2792e8cce9c21847dd1902efe969dc48-389682227'
           : 'APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227';
 
-        const preferenceResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
+        // Modificado quirúrgicamente para impactar a través de la redirección configurada en Vite
+        const preferenceResponse = await fetch('/api-mercadopago/checkout/preferences', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${activeToken}`,
@@ -186,7 +187,7 @@ export const CheckoutForm = () => {
         const preferenceData = await preferenceResponse.json();
         if (preferenceData && preferenceData.init_point) {
           console.log("[Mercado Pago] Checkout seguro verificado. Redirigiendo a pasarela...");
-          // Redirige al flujo seguro oficial donde se efectúa el cobrow real en las cuotas elegidas
+          // Redirige al flujo seguro oficial donde se efectúa el cobro real en las cuotas elegidas
           window.location.href = preferenceData.init_point;
           return;
         }
@@ -197,7 +198,7 @@ export const CheckoutForm = () => {
       }
     }
 
-    // CIRCUITO ORIGINAL INTACTO PARA TRANSFERENCIA / EFECTIVO / RETORNO EXITOSO
+    // CIRCUITO ORIGINAL INTACTO PARA TRANSFERENCIA / EFECTIVO / RETORNO EXITOSO (Sincroniza stock y orden con Tiendanube)
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
@@ -429,7 +430,7 @@ export const CheckoutForm = () => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '25px', borderBottom: '1px solid #000', paddingBottom: '25px' }}>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'gap: 10px' }}>
               <input type="text" placeholder="CÓDIGO DE DESCUENTO" value={cuponInput} onChange={(e) => setCuponInput(e.target.value)} style={{ flex: 1, padding: '12px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', outline: 'none' }} />
               <button type="button" onClick={handleAplicarCupon} style={{ background: '#000', color: '#fff', border: 'none', padding: '0 24px', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', cursor: 'pointer', textTransform: 'uppercase' }}>
                 APLICAR
