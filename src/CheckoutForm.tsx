@@ -141,7 +141,7 @@ export const CheckoutForm = () => {
         cuotas: cuotas
       };
 
-      // 💳 PASARELA CORREGIDA QUIRÚRGICAMENTE PARA EVITAR EL ERROR 400 (BAD REQUEST)
+      // 💳 PASARELA DE CHECKOUT SEGURO - REDIRECCIÓN OFICIAL
       try {
         console.log("[Mercado Pago] Generando entorno seguro de checkout...");
         
@@ -150,7 +150,6 @@ export const CheckoutForm = () => {
           ? 'TEST-3933426876716509-070112-2792e8cce9c21847dd1902efe969dc48-389682227'
           : 'APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227';
 
-        // Estructura limpia y adaptada a la especificación estricta de Mercado Pago
         const preferenceResponse = await fetch('/api-mercadopago/checkout/preferences', {
           method: 'POST',
           headers: {
@@ -164,7 +163,7 @@ export const CheckoutForm = () => {
                 title: "Orden de Compra - Aspen Clothing",
                 description: `Pedido de prendas Aspen para ${nombre.trim()}`,
                 quantity: 1,
-                unit_price: Number(montoFinalAMostrar), // Nos aseguramos de que sea un Number estricto
+                unit_price: Number(montoFinalAMostrar),
                 currency_id: 'ARS'
               }
             ],
@@ -185,23 +184,24 @@ export const CheckoutForm = () => {
           const errorTxt = await preferenceResponse.text();
           console.error("[Mercado Pago API Error Details]:", errorTxt);
           setErrorPasarela("TARJETA RECHAZADA O DATOS INVÁLIDOS. POR FAVOR VERIFIQUE.");
-          return; // 🛑 BLOQUEO ESTRICTO
+          return;
         }
 
         const preferenceData = await preferenceResponse.json();
         if (preferenceData && preferenceData.init_point) {
           console.log("[Mercado Pago] Checkout seguro verificado. Redirigiendo a pasarela...");
+          // Redirigimos directamente al checkout oficial de Mercado Pago
           window.location.href = preferenceData.init_point;
           return;
         }
       } catch (mpError) {
         console.error("[Mercado Pago] Fallo en pasarela:", mpError);
         setErrorPasarela("ERROR EN LA PASARELA DE PAGO: TARJETA INVÁLIDA O RECHAZADA.");
-        return; // 🛑 BLOQUEO ESTRICTO
+        return;
       }
     }
 
-    // CIRCUITO ORIGINAL INTACTO PARA TRANSFERENCIA / EFECTIVO / RETORNO EXITOSO (Sincroniza stock y orden con Tiendanube)
+    // CIRCUITO ORIGINAL INTACTO PARA TRANSFERENCIA / EFECTIVO
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
@@ -227,11 +227,15 @@ export const CheckoutForm = () => {
       setCompraExitosa(true);
       return;
     } else {
-      setErrorPasarela("NO SE PUDO SINCRONIZAR LA ORDEN CON TIENDANUBE. INTENTE MÁS TARDE.");
+      setErrorPasarela("NO SE PUDO SINCRONIZAR LA ORDEN CON TIENDANUBE. INTENTE MÁS TARDÉ.");
     }
   };
 
   if (compraExitosa) {
+    // Blindamos los toLocaleString con valores por defecto para evitar cualquier TypeError en el renderizado
+    const montoSeguro = (montoFinalCobrado || 0).toLocaleString('es-AR');
+    const envioSeguro = (costoEnvio || 0).toLocaleString('es-AR');
+
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#f0fdf4', marginBottom: '24px' }}>
@@ -254,10 +258,10 @@ export const CheckoutForm = () => {
           </h3>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método de pago:</strong> {metodoPago === 'tarjeta' ? `Tarjeta de Crédito (${marcaDetectada.toUpperCase()})` : metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Destino de entrega:</strong> {direccion}, {localidad || 'Mendoza'}</p>
-          <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Costo de Envío:</strong> ${costoEnvio.toLocaleString('es-AR')},00</p>
+          <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Costo de Envío:</strong> ${envioSeguro},00</p>
           <p style={{ margin: '12px 0 0 0', fontSize: '13px', fontWeight: 700, paddingTop: '12px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
             <span>TOTAL PROCESADO:</span>
-            <span>${montoFinalCobrado.toLocaleString('es-AR')},00</span>
+            <span>${montoSeguro},00</span>
           </p>
         </div>
 
