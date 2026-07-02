@@ -8,7 +8,7 @@ import App from './App.tsx'
 // Detecta de forma automática si estás en tu computadora o en producción para activar el escudo correcto
 const esLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const PUBLIC_KEY_MERCADOPAGO = esLocal
-  ? 'TEST-bbc9ad87-e59f-45dc-9647-d983e84862f5' // 👈 Public Key de prueba de tu captura de WhatsApp
+  ? 'TEST-bbc9ad87-e59f-45dc-9647-d983e84862f54' // 👈 Corregido: Agregado el '4' que faltaba al final
   : 'APP_USR-efd61244-934c-42b7-a37a-77ffda284133'; // 👈 Tu Public Key de producción real para cuando esté online
 
 if ((window as any).MercadoPago) {
