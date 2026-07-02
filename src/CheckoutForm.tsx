@@ -146,7 +146,7 @@ export const CheckoutForm = () => {
         cuotas: cuotas
       };
 
-      // 💳 PASARELA DE CHECKOUT SEGURO CORREGIDA PARA LAS BACK_URLS
+      // 💳 PASARELA DE CHECKOUT SEGURO
       try {
         console.log("[Mercado Pago] Generando entorno seguro de checkout...");
         setCargandoPasarela(true);
@@ -156,7 +156,6 @@ export const CheckoutForm = () => {
           ? 'TEST-3933426876716509-070112-2792e8cce9c21847dd1902efe969dc48-389682227'
           : 'APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227';
 
-        // Construimos una URL base absoluta válida (ej: http://localhost:5173)
         const urlBaseAbsoluta = `${window.location.protocol}//${window.location.host}`;
 
         const preferenceResponse = await fetch('/api-mercadopago/checkout/preferences', {
@@ -200,9 +199,9 @@ export const CheckoutForm = () => {
 
         const preferenceData = await preferenceResponse.json();
         if (preferenceData && preferenceData.init_point) {
-          console.log("[Mercado Pago] Checkout seguro verificado. Redirigiendo a pasarela...");
+          console.log("[Mercado Pago] Checkout seguro generado. Link listo para el usuario.");
+          // Guardamos el link en el estado y NO forzamos window.location.href para evitar el 'canceled'
           setLinkMercadoPago(preferenceData.init_point);
-          window.location.href = preferenceData.init_point;
           return;
         }
       } catch (mpError) {
@@ -260,7 +259,7 @@ export const CheckoutForm = () => {
         </h1>
         
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro system. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
         <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
