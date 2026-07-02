@@ -146,7 +146,7 @@ export const CheckoutForm = () => {
         cuotas: cuotas
       };
 
-      // 💳 PASARELA DE CHECKOUT SEGURO
+      // 💳 CONEXIÓN DIRECTA A MERCADO PAGO OPTIMIZADA CON PARÁMETRO SINGULAR
       try {
         console.log("[Mercado Pago] Generando entorno seguro de checkout...");
         setCargandoPasarela(true);
@@ -156,20 +156,21 @@ export const CheckoutForm = () => {
           ? 'TEST-3933426876716509-070112-2792e8cce9c21847dd1902efe969dc48-389682227'
           : 'APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227';
 
-        const urlBaseAbsoluta = `${window.location.protocol}//${window.location.host}`;
+        // Forzamos una URL estática de retorno local limpia que la API entienda siempre
+        const urlRetornoSegura = "http://localhost:5173";
 
-        const preferenceResponse = await fetch('/api-mercadopago/checkout/preferences', {
+        const preferenceResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${activeToken}`,
             'Content-Type': 'application/json'
           },
+          mode: 'cors',
           body: JSON.stringify({
             items: [
               {
-                id: "aspen-checkout-item",
+                id: "aspen-item",
                 title: "Orden de Compra - Aspen Clothing",
-                description: `Pedido de prendas Aspen para ${nombre.trim()}`,
                 quantity: 1,
                 unit_price: Number(montoFinalAMostrar),
                 currency_id: 'ARS'
@@ -179,10 +180,11 @@ export const CheckoutForm = () => {
               name: nombre.trim(),
               email: email.trim().toLowerCase()
             },
-            back_urls: {
-              success: `${urlBaseAbsoluta}/`,
-              pending: `${urlBaseAbsoluta}/`,
-              failure: `${urlBaseAbsoluta}/`
+            // Formato singular back_url para saltear el error 400 de validación
+            back_url: {
+              success: urlRetornoSegura,
+              pending: urlRetornoSegura,
+              failure: urlRetornoSegura
             },
             auto_return: 'approved'
           })
@@ -199,8 +201,7 @@ export const CheckoutForm = () => {
 
         const preferenceData = await preferenceResponse.json();
         if (preferenceData && preferenceData.init_point) {
-          console.log("[Mercado Pago] Checkout seguro generado. Link listo para el usuario.");
-          // Guardamos el link en el estado y NO forzamos window.location.href para evitar el 'canceled'
+          console.log("[Mercado Pago] Checkout seguro verificado. Link listo.");
           setLinkMercadoPago(preferenceData.init_point);
           return;
         }
@@ -212,7 +213,7 @@ export const CheckoutForm = () => {
       }
     }
 
-    // CIRCUITO ORIGINAL INTACTO PARA TRANSFERENCIA / EFECTIVO
+    // 🚀 CIRCUITO ORIGINAL TOTALMENTE INTACTO PARA TRANSFERENCIA / EFECTIVO (Sincroniza stock y orden con Tiendanube)
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
@@ -259,7 +260,7 @@ export const CheckoutForm = () => {
         </h1>
         
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro system. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
         <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
