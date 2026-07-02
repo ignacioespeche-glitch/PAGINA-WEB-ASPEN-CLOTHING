@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true, // Permite las conexiones del túnel de Ngrok
     proxy: {
-      // Intercepta las llamadas locales y las manda a los servidores de Tiendanube (INTACTO)
+      // Intercepta las llamadas locales y las manda a los servidores de Tiendanube (INTACTO, NO SE TOCA)
       '/api-tiendanube': {
         target: 'https://api.tiendanube.com',
         changeOrigin: true,
@@ -22,19 +22,15 @@ export default defineConfig({
           });
         }
       },
-      // 💳 AGREGADO QUIRÚRGICO: Pasarela espejo para Mercado Pago (Solución al 404)
+      // 💳 REPARACIÓN QUIRÚRGICA: Proxy directo para Mercado Pago (Evita la destrucción del JSON POST)
       '/api-mercadopago': {
         target: 'https://api.mercadopago.com',
         changeOrigin: true,
         secure: false,
         ws: true,
-        rewrite: (path) => path.replace(/^\/api-mercadopago/, ''),
-        configure: (proxy, _options) => {
-          proxy.on('proxyReq', (proxyReq, _req, _res) => {
-            proxyReq.setHeader('Origin', 'https://api.mercadopago.com');
-            proxyReq.setHeader('Referer', 'https://api.mercadopago.com/');
-          });
-        }
+        rewrite: (path) => path.replace(/^\/api-mercadopago/, '')
+        // Removimos el bloque 'configure' para que Vite no intercepte el flujo de datos
+        // y el JSON con las back_urls llegue 100% entero a Mercado Pago.
       }
     }
   }
