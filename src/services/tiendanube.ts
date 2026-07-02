@@ -169,7 +169,6 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// IMPACTA DIRECTO EN EL PANEL DE VENTAS REALES
 // IMPACTA DIRECTO EN EL PANEL DE VENTAS REALES Y PREVIENE ERRORES DE LLAVES
 export const crearOrdenTiendanube = async (
   datosCliente: any, 

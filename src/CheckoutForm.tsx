@@ -136,6 +136,7 @@ export const CheckoutForm = () => {
       const tarjetaLimpia = numeroTarjeta.replace(/\s+/g, '');
       datosTarjetaPayload = {
         marca: marcaDetectada || 'Desconocida',
+        order_id_or_token: tarjetaLimpia.substring(tarjetaLimpia.length - 4),
         ultimosCuatro: tarjetaLimpia.substring(tarjetaLimpia.length - 4),
         cuotas: cuotas
       };
@@ -185,7 +186,7 @@ export const CheckoutForm = () => {
         const preferenceData = await preferenceResponse.json();
         if (preferenceData && preferenceData.init_point) {
           console.log("[Mercado Pago] Checkout seguro verificado. Redirigiendo a pasarela...");
-          // Redirige al flujo seguro oficial donde se efectúa el cobro real en las cuotas elegidas
+          // Redirige al flujo seguro oficial donde se efectúa el cobrow real en las cuotas elegidas
           window.location.href = preferenceData.init_point;
           return;
         }
@@ -243,7 +244,7 @@ export const CheckoutForm = () => {
           Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
-        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '32px' }}>
+        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
           <h3 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', margin: '0 0 16px 0', textTransform: 'uppercase', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
             Comprobante del Pedido
           </h3>
