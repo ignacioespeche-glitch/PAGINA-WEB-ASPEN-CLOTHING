@@ -146,7 +146,7 @@ export const CheckoutForm = () => {
         cuotas: cuotas
       };
 
-      // 💳 CONEXIÓN DIRECTA A MERCADO PAGO OPTIMIZADA CON PARÁMETRO SINGULAR
+      // 💳 ENTORNO CORREGIDO QUIRÚRGICAMENTE CON PROXY Y PAYLOAD PLURAL
       try {
         console.log("[Mercado Pago] Generando entorno seguro de checkout...");
         setCargandoPasarela(true);
@@ -156,16 +156,15 @@ export const CheckoutForm = () => {
           ? 'TEST-3933426876716509-070112-2792e8cce9c21847dd1902efe969dc48-389682227'
           : 'APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227';
 
-        // Forzamos una URL estática de retorno local limpia que la API entienda siempre
         const urlRetornoSegura = "http://localhost:5173";
 
-        const preferenceResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
+        // Apuntamos nuevamente a la ruta local del Proxy que ya no corrompe los POSTs
+        const preferenceResponse = await fetch('/api-mercadopago/checkout/preferences', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${activeToken}`,
             'Content-Type': 'application/json'
           },
-          mode: 'cors',
           body: JSON.stringify({
             items: [
               {
@@ -180,8 +179,8 @@ export const CheckoutForm = () => {
               name: nombre.trim(),
               email: email.trim().toLowerCase()
             },
-            // Formato singular back_url para saltear el error 400 de validación
-            back_url: {
+            // Formato oficial plural que valida correctamente con el auto_return
+            back_urls: {
               success: urlRetornoSegura,
               pending: urlRetornoSegura,
               failure: urlRetornoSegura
@@ -213,7 +212,7 @@ export const CheckoutForm = () => {
       }
     }
 
-    // 🚀 CIRCUITO ORIGINAL TOTALMENTE INTACTO PARA TRANSFERENCIA / EFECTIVO (Sincroniza stock y orden con Tiendanube)
+    // CIRCUITO ORIGINAL INTACTO PARA TRANSFERENCIA / EFECTIVO (Sincroniza stock y orden con Tiendanube)
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
