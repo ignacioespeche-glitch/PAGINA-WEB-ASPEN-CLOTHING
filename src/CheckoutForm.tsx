@@ -141,17 +141,16 @@ export const CheckoutForm = () => {
         cuotas: cuotas
       };
 
-      // 💳 PASARELA MODIFICADA CON PROXY SEGURO PARA ELIMINAR EL 404
+      // 💳 PASARELA CORREGIDA QUIRÚRGICAMENTE PARA EVITAR EL ERROR 400 (BAD REQUEST)
       try {
         console.log("[Mercado Pago] Generando entorno seguro de checkout...");
         
-        // Detección automática de entorno local/producción
         const esLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const activeToken = esLocal 
           ? 'TEST-3933426876716509-070112-2792e8cce9c21847dd1902efe969dc48-389682227'
           : 'APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227';
 
-        // Modificado quirúrgicamente para impactar a través de la redirección configurada en Vite
+        // Estructura limpia y adaptada a la especificación estricta de Mercado Pago
         const preferenceResponse = await fetch('/api-mercadopago/checkout/preferences', {
           method: 'POST',
           headers: {
@@ -161,9 +160,11 @@ export const CheckoutForm = () => {
           body: JSON.stringify({
             items: [
               {
-                title: `Compra en Aspen Clothing - ${nombre.trim()}`,
+                id: "aspen-checkout-item",
+                title: "Orden de Compra - Aspen Clothing",
+                description: `Pedido de prendas Aspen para ${nombre.trim()}`,
                 quantity: 1,
-                unit_price: montoFinalAMostrar,
+                unit_price: Number(montoFinalAMostrar), // Nos aseguramos de que sea un Number estricto
                 currency_id: 'ARS'
               }
             ],
@@ -173,6 +174,7 @@ export const CheckoutForm = () => {
             },
             back_urls: {
               success: window.location.href,
+              pending: window.location.href,
               failure: window.location.href
             },
             auto_return: 'approved'
@@ -180,14 +182,15 @@ export const CheckoutForm = () => {
         });
 
         if (!preferenceResponse.ok) {
+          const errorTxt = await preferenceResponse.text();
+          console.error("[Mercado Pago API Error Details]:", errorTxt);
           setErrorPasarela("TARJETA RECHAZADA O DATOS INVÁLIDOS. POR FAVOR VERIFIQUE.");
-          return; // 🛑 BLOQUEO ESTRICTO: Si Mercado Pago rechaza el plástico, frena acá.
+          return; // 🛑 BLOQUEO ESTRICTO
         }
 
         const preferenceData = await preferenceResponse.json();
         if (preferenceData && preferenceData.init_point) {
           console.log("[Mercado Pago] Checkout seguro verificado. Redirigiendo a pasarela...");
-          // Redirige al flujo seguro oficial donde se efectúa el cobro real en las cuotas elegidas
           window.location.href = preferenceData.init_point;
           return;
         }
@@ -245,7 +248,7 @@ export const CheckoutForm = () => {
           Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
-        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
+        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '32px' }}>
           <h3 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', margin: '0 0 16px 0', textTransform: 'uppercase', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
             Comprobante del Pedido
           </h3>
@@ -430,7 +433,7 @@ export const CheckoutForm = () => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '25px', borderBottom: '1px solid #000', paddingBottom: '25px' }}>
-            <div style={{ display: 'gap: 10px' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
               <input type="text" placeholder="CÓDIGO DE DESCUENTO" value={cuponInput} onChange={(e) => setCuponInput(e.target.value)} style={{ flex: 1, padding: '12px', border: '1px solid #000', backgroundColor: '#fff', fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', outline: 'none' }} />
               <button type="button" onClick={handleAplicarCupon} style={{ background: '#000', color: '#fff', border: 'none', padding: '0 24px', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', cursor: 'pointer', textTransform: 'uppercase' }}>
                 APLICAR
