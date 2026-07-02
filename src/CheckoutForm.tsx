@@ -42,6 +42,10 @@ export const CheckoutForm = () => {
   const [compraExitosa, setCompraExitosa] = useState(false); 
   const [montoFinalCobrado, setMontoFinalCobrado] = useState(0);
 
+  // Link de redirección de Mercado Pago si se requiere click manual
+  const [linkMercadoPago, setLinkMercadoPago] = useState('');
+  const [cargandoPasarela, setCargandoPasarela] = useState(false);
+
   const meses = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
   const anioActual = 2026;
   const anios = Array.from({ length: 2070 - anioActual + 1 }, (_, i) => String(anioActual + i));
@@ -120,6 +124,7 @@ export const CheckoutForm = () => {
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorPasarela(''); 
+    setLinkMercadoPago('');
     
     if (!email.trim() || !nombre.trim() || !direccion.trim()) {
       setErrorPasarela("POR FAVOR COMPLETA LOS CAMPOS OBLIGATORIOS DE ENVÍO.");
@@ -141,9 +146,10 @@ export const CheckoutForm = () => {
         cuotas: cuotas
       };
 
-      // 💳 PASARELA DE CHECKOUT SEGURO - REDIRECCIÓN OFICIAL
+      // 💳 PASARELA DE CHECKOUT SEGURO
       try {
         console.log("[Mercado Pago] Generando entorno seguro de checkout...");
+        setCargandoPasarela(true);
         
         const esLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const activeToken = esLocal 
@@ -180,6 +186,8 @@ export const CheckoutForm = () => {
           })
         });
 
+        setCargandoPasarela(false);
+
         if (!preferenceResponse.ok) {
           const errorTxt = await preferenceResponse.text();
           console.error("[Mercado Pago API Error Details]:", errorTxt);
@@ -190,11 +198,13 @@ export const CheckoutForm = () => {
         const preferenceData = await preferenceResponse.json();
         if (preferenceData && preferenceData.init_point) {
           console.log("[Mercado Pago] Checkout seguro verificado. Redirigiendo a pasarela...");
-          // Redirigimos directamente al checkout oficial de Mercado Pago
+          setLinkMercadoPago(preferenceData.init_point);
+          // Intento de redirección directa
           window.location.href = preferenceData.init_point;
           return;
         }
       } catch (mpError) {
+        setCargandoPasarela(false);
         console.error("[Mercado Pago] Fallo en pasarela:", mpError);
         setErrorPasarela("ERROR EN LA PASARELA DE PAGO: TARJETA INVÁLIDA O RECHAZADA.");
         return;
@@ -227,12 +237,11 @@ export const CheckoutForm = () => {
       setCompraExitosa(true);
       return;
     } else {
-      setErrorPasarela("NO SE PUDO SINCRONIZAR LA ORDEN CON TIENDANUBE. INTENTE MÁS TARDÉ.");
+      setErrorPasarela("NO SE PUDO SINCRONIZAR LA ORDEN CON TIENDANUBE. INTENTE MÁS TARDE.");
     }
   };
 
   if (compraExitosa) {
-    // Blindamos los toLocaleString con valores por defecto para evitar cualquier TypeError en el renderizado
     const montoSeguro = (montoFinalCobrado || 0).toLocaleString('es-AR');
     const envioSeguro = (costoEnvio || 0).toLocaleString('es-AR');
 
@@ -404,9 +413,23 @@ export const CheckoutForm = () => {
             </span>
           )}
 
-          <button type="submit" style={{ width: '100%', background: '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}>
-            {metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
-          </button>
+          {/* 🔘 CONTROL INTELIGENTE DE REDIRECCIÓN EN CHECKOUT */}
+          {linkMercadoPago ? (
+            <a 
+              href={linkMercadoPago}
+              style={{ display: 'block', width: '100%', background: '#0056b3', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px', textAlign: 'center', textDecoration: 'none' }}
+            >
+              🚀 PROCEDER AL PAGO SEGURO
+            </a>
+          ) : (
+            <button 
+              type="submit" 
+              disabled={cargandoPasarela}
+              style={{ width: '100%', background: cargandoPasarela ? '#666' : '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
+            >
+              {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
+            </button>
+          )}
         </div>
 
         {/* COLUMNA DERECHA */}
