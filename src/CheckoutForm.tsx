@@ -22,7 +22,7 @@ export const CheckoutForm = () => {
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
-  // Estados locales para la tarjeta (RESTAURADOS COMPLETAMENTE)
+  // Estados locales para la tarjeta
   const [numeroTarjeta, setNumeroTarjeta] = useState('');
   const [mesVencimiento, setMesVencimiento] = useState('');
   const [anioVencimiento, setAnioVencimiento] = useState('');
@@ -42,7 +42,7 @@ export const CheckoutForm = () => {
   const [compraExitosa, setCompraExitosa] = useState(false); 
   const [montoFinalCobrado, setMontoFinalCobrado] = useState(0);
 
-  // Estados de control de la pasarela
+  // Link de redirección de Mercado Pago si se requiere click manual
   const [linkMercadoPago, setLinkMercadoPago] = useState('');
   const [cargandoPasarela, setCargandoPasarela] = useState(false);
 
@@ -69,8 +69,8 @@ export const CheckoutForm = () => {
     const limpio = numero.replace(/\s+/g, '');
     if (limpio.startsWith('4')) return 'Visa';
     const prefijoDos = parseInt(limpio.substring(0, 2), 10);
-    const prefijoCuatro = parseInt(limpio.substring(0, 4), 10);
-    if ((prefijoDos >= 51 && prefijoDos <= 55) || (prefijoCuatro >= 2221 && prefijoCuatro <= 2720)) {
+    const prefijoFour = parseInt(limpio.substring(0, 4), 10);
+    if ((prefijoDos >= 51 && prefijoDos <= 55) || (prefijoFour >= 2221 && prefijoFour <= 2720)) {
       return 'Mastercard';
     }
     return '';
@@ -105,6 +105,15 @@ export const CheckoutForm = () => {
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
     const totalPedido = montoFinalAMostrar.toLocaleString('es-AR');
     const mensaje = `Hola Aspen! Soy ${nombreCliente}.\n\nAcabo de realizar la transferencia por un total de $${totalPedido},00 correspondiente a mi pedido (envío incluido). Adjunto el comprobante de pago para su verificación.`;
+    return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
+  };
+
+  // 🚀 LINK DE WHATSAPP EXCLUSIVO PARA VALIDACIÓN SEGURA DE TARJETAS
+  const obtenerLinkWhatsAppTarjetaExito = (montoFinal: number) => {
+    const telefonoLocal = '542612515727';
+    const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
+    const totalPedido = montoFinal.toLocaleString('es-AR');
+    const mensaje = `¡Hola Aspen! Acabo de realizar mi compra con tarjeta a nombre de ${nombreCliente} por un total de $${totalPedido},00. Solicito la factura, el comprobante de venta y el seguimiento del código de envío por este medio.`;
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
@@ -180,9 +189,14 @@ export const CheckoutForm = () => {
     }
   };
 
+  // 📋 DETALLE VISUAL DE ÉXITO AJUSTADO SEGÚN EL REQUISITO DE SEGURIDAD ORDENADO
   if (compraExitosa) {
     const montoSeguro = (montoFinalCobrado || 0).toLocaleString('es-AR');
     const envioSeguro = (costoEnvio || 0).toLocaleString('es-AR');
+
+    // Cálculos dinámicos en vivo para las cuotas
+    const valorCuotaDividido = Math.round(montoFinalCobrado / Number(cuotas));
+    const labelCuotaInformativa = `${cuotas} ${Number(cuotas) === 1 ? 'pago' : 'cuotas'} de $${valorCuotaDividido.toLocaleString('es-AR')},00 sin interés`;
 
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
@@ -200,11 +214,26 @@ export const CheckoutForm = () => {
           Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
-        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
+        {/* 🔒 TEXTO DE RESPALDO Y SEGURIDAD EXCLUSIVO PARA TARJETA */}
+        {metodoPago === 'tarjeta' && (
+          <div style={{ border: '1px solid #16a34a', backgroundColor: '#f0fdf4', padding: '16px', borderRadius: '4px', marginBottom: '24px', textAlign: 'left' }}>
+            <p style={{ margin: 0, fontSize: '12px', color: '#14532d', lineHeight: '1.5' }}>
+              <strong>🔒 Transacción Segura Garantizada:</strong> Tu pago ha sido procesado de forma encriptada bajo el entorno certificado de Pago Nube, resguardando la privacidad de tus datos bancarios en todo momento.
+            </p>
+          </div>
+        )}
+
+        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '32px' }}>
           <h3 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', margin: '0 0 16px 0', textTransform: 'uppercase', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
             Comprobante del Pedido
           </h3>
-          <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método de pago:</strong> {metodoPago === 'tarjeta' ? `Tarjeta de Crédito o Débito (Pago Nube)` : metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
+          <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método de pago:</strong> {metodoPago === 'tarjeta' ? 'Tarjeta de Crédito o Débito (Pago Nube)' : metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
+          
+          {/* Muestra el desglose del plan de pagos elegido si fue tarjeta */}
+          {metodoPago === 'tarjeta' && (
+            <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Plan de pagos seleccionado:</strong> {labelCuotaInformativa}</p>
+          )}
+
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Destino de entrega:</strong> {direccion}, {localidad || 'Mendoza'}</p>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Costo de Envío:</strong> ${envioSeguro},00</p>
           <p style={{ margin: '12px 0 0 0', fontSize: '13px', fontWeight: 700, paddingTop: '12px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
@@ -212,6 +241,23 @@ export const CheckoutForm = () => {
             <span>${montoSeguro},00</span>
           </p>
         </div>
+
+        {/* 🟢 BLOQUE INTERACTIVO DE WHATSAPP EXCLUSIVO PARA TARJETA */}
+        {metodoPago === 'tarjeta' && (
+          <div style={{ border: '1px solid #000', padding: '20px', textAlign: 'center', backgroundColor: '#fff', marginBottom: '32px' }}>
+            <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#000', lineHeight: '1.6', fontWeight: 500 }}>
+              Si querés mayor seguridad, hablanos al WhatsApp. Te compartimos la factura y comprobante de venta por ese medio, y luego te enviaremos tu código de envío.
+            </p>
+            <a 
+              href={obtenerLinkWhatsAppTarjetaExito(montoFinalCobrado)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', background: '#000', color: '#fff', textDecoration: 'none', padding: '12px 24px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', border: '1px solid #000' }}
+            >
+              💬 SOLICITAR COMPROBANTE Y FACTURA
+            </a>
+          </div>
+        )}
 
         <button 
           type="button" 
@@ -352,7 +398,7 @@ export const CheckoutForm = () => {
             </span>
           )}
 
-          {/* 🔘 CONTROL INTELIGENTE DE REDIRECCIÓN EN CHECKOUT (BOTONES ORIGINALES PRESERVADOS) */}
+          {/* 🔘 CONTROL INTELIGENTE DE REDIRECCIÓN EN CHECKOUT */}
           {linkMercadoPago ? (
             <a 
               href={linkMercadoPago}
