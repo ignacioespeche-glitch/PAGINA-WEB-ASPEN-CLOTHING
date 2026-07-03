@@ -135,7 +135,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
     'CUPON10K': { codigo: 'CUPON10K', tipo: 'absolute', valor: 10000 },
     'CLIENTE20K': { codigo: 'CLIENTE20K', tipo: 'absolute', valor: 20000 },
     'BLACK30K': { codigo: 'BLACK30K', tipo: 'absolute', valor: 30000 }
-  };
+  ];
 
   try {
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/coupons`, {
@@ -159,7 +159,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
         return {
           codigo: cuponEncontrado.code.toUpperCase(),
           tipo: cuponEncontrado.type === 'percentage' ? 'percentage' : 'absolute', 
-          valor: parseFloat(cuponEncontrado.value)
+          value: parseFloat(cuponEncontrado.value)
         };
       }
     }
@@ -215,7 +215,8 @@ export const crearOrdenTiendanube = async (
         country: 'AR',
         zipcode: '5500'
       },
-      payment_status: 'paid',
+      // 💳 MODIFICACIÓN QUIRÚRGICA: Si es tarjeta, viaja pendiente para forzar el link seguro de Pago Nube
+      payment_status: metodoPago === 'tarjeta' ? 'pending' : 'paid',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
@@ -233,10 +234,10 @@ export const crearOrdenTiendanube = async (
     });
 
     if (response.ok) {
-      await response.json();
+      const data = await response.json();
       console.log("[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL DE TIENDANUBE!");
 
-      // 🚀 FORZAR DESCUENTO DE STOCK MANUAL DIRECTO EN EL CATÁLOGO
+      // 🚀 FORZAR DESCUENTO DE STOCK MANUAL DIRECTO EN EL CATÁLOGO (TOTALMENTE INTACTO)
       for (const item of lineItemsPayload) {
         if (item.product_id && item.variant_id) {
           try {
@@ -265,7 +266,7 @@ export const crearOrdenTiendanube = async (
                 },
                 body: JSON.stringify({ stock: nuevoStock })
               });
-              console.log(`[Stock] Producto ${item.product_id} actualizado con éxito a: ${nuevoStock}`);
+              console.log(`[Stock] Producto ${item.product_id} updated con éxito a: ${nuevoStock}`);
             }
           } catch (err) {
             console.error("Error al descontar stock manualmente:", err);
@@ -273,7 +274,8 @@ export const crearOrdenTiendanube = async (
         }
       }
 
-      return "SUCCESS";
+      // 💳 MODIFICACIÓN QUIRÚRGICA: Retorna la URL de checkout generada por Tiendanube en lugar de un texto estático
+      return data.checkout_url || "SUCCESS";
     } else {
       const errorText = await response.text();
       console.error(`[Error Tiendanube API ${response.status}]`, errorText);

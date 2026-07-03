@@ -171,8 +171,14 @@ export const CheckoutForm = () => {
 
     setCargandoPasarela(false);
 
-    if (respuestaApi === "SUCCESS") {
+    // 💳 INTERVENCIÓN QUIRÚRGICA: Redirección instantánea si la API retorna una URL válida de Pago Nube
+    if (respuestaApi) {
       console.log("[Aspen] ¡Éxito! Orden impactada en Tiendanube.");
+
+      if (metodoPago === 'tarjeta' && respuestaApi.startsWith('http')) {
+        window.location.href = respuestaApi;
+        return;
+      }
 
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
@@ -223,7 +229,7 @@ export const CheckoutForm = () => {
           </div>
         )}
 
-        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '32px' }}>
+        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
           <h3 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', margin: '0 0 16px 0', textTransform: 'uppercase', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
             Comprobante del Pedido
           </h3>
@@ -244,7 +250,7 @@ export const CheckoutForm = () => {
 
         {/* 🟢 BLOQUE INTERACTIVO DE WHATSAPP EXCLUSIVO PARA TARJETA */}
         {metodoPago === 'tarjeta' && (
-          <div style={{ border: '1px solid #000', padding: '20px', textAlign: 'center', backgroundColor: '#fff', marginBottom: '32px' }}>
+          <div style={{ border: '1px solid #000', padding: '20px', textAlign: 'center', backgroundColor: '#fff', marginBottom: '#32px' }}>
             <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#000', lineHeight: '1.6', fontWeight: 500 }}>
               Si querés mayor seguridad, hablanos al WhatsApp. Te compartimos la factura y comprobante de venta por ese medio, y luego te enviaremos tu código de envío.
             </p>
@@ -398,7 +404,7 @@ export const CheckoutForm = () => {
             </span>
           )}
 
-          {/* 🔘 CONTROL INTELIGENTE DE REDIRECCIÓN EN CHECKOUT */}
+          {/* 🔘 CONTROL INTELIGENTE DE REDIRECCIÓN EN CHECKOUT (MANTIENE LA VARIABLE linkMercadoPago SOLO COMO SOPORTE VISUAL INTACTO) */}
           {linkMercadoPago ? (
             <a 
               href={linkMercadoPago}
@@ -412,7 +418,7 @@ export const CheckoutForm = () => {
               disabled={cargandoPasarela}
               style={{ width: '100%', background: cargandoPasarela ? '#666' : '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
             >
-              {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
+              {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : metodoPago === 'tarjeta' ? 'IR A PAGO TIENDANUBE' : 'PAGAR AHORA'}
             </button>
           )}
         </div>
