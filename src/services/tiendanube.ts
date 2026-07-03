@@ -28,7 +28,7 @@ export interface OpcionEnvio {
 export interface CuponDescuento {
   codigo: string;
   tipo: 'percentage' | 'absolute';
-  valor: number;
+  valor: number; // Mantenemos la propiedad original que consume tu CheckoutForm
 }
 
 export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
@@ -135,7 +135,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
     'CUPON10K': { codigo: 'CUPON10K', tipo: 'absolute', valor: 10000 },
     'CLIENTE20K': { codigo: 'CLIENTE20K', tipo: 'absolute', valor: 20000 },
     'BLACK30K': { codigo: 'BLACK30K', tipo: 'absolute', valor: 30000 }
-  ];
+  };
 
   try {
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/coupons`, {
@@ -159,7 +159,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
         return {
           codigo: cuponEncontrado.code.toUpperCase(),
           tipo: cuponEncontrado.type === 'percentage' ? 'percentage' : 'absolute', 
-          value: parseFloat(cuponEncontrado.value)
+          valor: parseFloat(cuponEncontrado.value) // <--- CORREGIDO: 'valor' en vez de 'value' para coincidir con la interfaz
         };
       }
     }
@@ -176,7 +176,7 @@ export const crearOrdenTiendanube = async (
   metodoPago: string, 
   _cupon: CuponDescuento | null,
   datosTarjeta?: { marca: string; ultimosCuatro: string }
-): Promise<string | null> => {
+): Promise<string | null> => { // Modificado para permitir 'string | null' según tu lógica visual
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
     

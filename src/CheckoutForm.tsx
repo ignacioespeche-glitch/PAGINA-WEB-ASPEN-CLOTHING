@@ -171,7 +171,7 @@ export const CheckoutForm = () => {
 
     setCargandoPasarela(false);
 
-    // 💳 INTERVENCIÓN QUIRÚRGICA: Redirección instantánea si la API retorna una URL válida de Pago Nube
+    // 💳 INTERVENCIÓN QUIRÚRGICA CONTROLADA: Redirección forzada al enlace externo seguro de Pago Nube si existe
     if (respuestaApi) {
       console.log("[Aspen] ¡Éxito! Orden impactada en Tiendanube.");
 
@@ -217,14 +217,14 @@ export const CheckoutForm = () => {
         </h1>
         
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro systema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
         {/* 🔒 TEXTO DE RESPALDO Y SEGURIDAD EXCLUSIVO PARA TARJETA */}
         {metodoPago === 'tarjeta' && (
           <div style={{ border: '1px solid #16a34a', backgroundColor: '#f0fdf4', padding: '16px', borderRadius: '4px', marginBottom: '24px', textAlign: 'left' }}>
             <p style={{ margin: 0, fontSize: '12px', color: '#14532d', lineHeight: '1.5' }}>
-              <strong>🔒 Transacción Segura Garantizada:</strong> Tu pago ha sido procesado de forma encriptada bajo el entorno certificado de Pago Nube, resguardando la privacidad de tus datos bancarios en todo momento.
+              <strong>🔒 Transacción Secura Garantizada:</strong> Tu pago ha sido procesado de forma encriptada bajo el entorno certificado de Pago Nube, resguardando la privacidad de tus datos bancarios en todo momento.
             </p>
           </div>
         )}
