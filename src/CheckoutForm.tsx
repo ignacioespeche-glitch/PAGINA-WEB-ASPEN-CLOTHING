@@ -1,7 +1,7 @@
 // src/CheckoutForm.tsx
 import { useState } from 'react';
 import { useCart } from './CartContext';
-import { validarCuponTiendanube, crearOrdenTiendanube, type CuponDescuento } from './services/tiendanube';
+import { validarCuponTiendanube, crearOrdenTiendanube, armarLinkCarritoDirecto, type CuponDescuento } from './services/tiendanube';
 
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
@@ -82,6 +82,22 @@ export const CheckoutForm = () => {
     }
 
     setCargandoPasarela(true);
+
+    // 🔒 MODIFICACIÓN DE PASARELA BLINDADA: Si es tarjeta, NO crea la orden de prepo.
+    // Redirecciona al checkout oficial directamente para recolectar los datos de forma segura.
+    if (metodoPago === 'tarjeta') {
+      const urlCheckoutOficial = armarLinkCarritoDirecto(carrito);
+      
+      localStorage.removeItem('aspen_cart');
+      localStorage.removeItem('aspen_costo_envio');
+      if (typeof setCarrito === 'function') setCarrito([]);
+      
+      setCargandoPasarela(false);
+      window.location.href = urlCheckoutOficial;
+      return;
+    }
+
+    // Para Efectivo/Transferencia mantenés tu flujo original intacto que ya está listo
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
@@ -96,16 +112,6 @@ export const CheckoutForm = () => {
     setCargandoPasarela(false);
 
     if (respuestaApiUrl) {
-      // 🚀 INTERCEPCIÓN CRÍTICA: Si eligió tarjeta, viaja YA MISMO a la página de pago externa de Tiendanube
-      if (metodoPago === 'tarjeta' && respuestaApiUrl.startsWith('http')) {
-        localStorage.removeItem('aspen_cart');
-        localStorage.removeItem('aspen_costo_envio');
-        if (typeof setCarrito === 'function') setCarrito([]);
-        window.location.href = respuestaApiUrl; // Redirección directa e inmediata
-        return;
-      }
-
-      // Flujo tradicional solo aplicable para métodos locales offline
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
       } else if (metodoPago === 'transferencia') {
