@@ -96,13 +96,16 @@ export const CheckoutForm = () => {
     setCargandoPasarela(false);
 
     if (respuestaApiUrl) {
+      // 🚀 INTERCEPCIÓN CRÍTICA: Si eligió tarjeta, viaja YA MISMO a la página de pago externa de Tiendanube
       if (metodoPago === 'tarjeta' && respuestaApiUrl.startsWith('http')) {
         localStorage.removeItem('aspen_cart');
         localStorage.removeItem('aspen_costo_envio');
-        window.location.href = respuestaApiUrl;
+        if (typeof setCarrito === 'function') setCarrito([]);
+        window.location.href = respuestaApiUrl; // Redirección directa e inmediata
         return;
       }
 
+      // Flujo tradicional solo aplicable para métodos locales offline
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
       } else if (metodoPago === 'transferencia') {
@@ -117,7 +120,7 @@ export const CheckoutForm = () => {
     }
   };
 
-  if (compraExitosa) {
+  if (compraExitosa && metodoPago !== 'tarjeta') {
     const montoSeguro = (montoFinalCobrado || 0).toLocaleString('es-AR');
     const envioSeguro = (costoEnvio || 0).toLocaleString('es-AR');
 
