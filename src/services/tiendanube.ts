@@ -287,3 +287,38 @@ export const crearOrdenTiendanube = async (
     return null;
   }
 };
+
+// 🚀 NUEVA FUNCIÓN ULTRA QUIRÚRGICA PARA OBTENER EL LINK DE CHECKOUT DINÁMICO DE PAGO NUBE
+export const obtenerLinkCheckoutPasarela = async (carrito: any[]): Promise<string | null> => {
+  try {
+    const itemsProcesables = Array.isArray(carrito) ? carrito : [];
+    const lineItemsPayload = itemsProcesables.map((item: any) => {
+      const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id);
+      return {
+        variant_id: Number(rawVariantId),
+        quantity: Number(item.cantidad || 1)
+      };
+    });
+
+    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/checkouts`, {
+      method: 'POST',
+      headers: {
+        'Authentication': `bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+      },
+      body: JSON.stringify({
+        line_items: lineItemsPayload
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.checkout_url || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error al obtener el checkout seguro:", error);
+    return null;
+  }
+};
