@@ -288,17 +288,26 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 NUEVA FUNCIÓN ULTRA QUIRÚRGICA PARA OBTENER EL LINK DE CHECKOUT DINÁMICO DE PAGO NUBE
+// 🚀 FUNCIÓN DE CHECKOUTS CORREGIDA PARA EVITAR EL ERROR 400 BAD REQUEST
 export const obtenerLinkCheckoutPasarela = async (carrito: any[]): Promise<string | null> => {
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : [];
-    const lineItemsPayload = itemsProcesables.map((item: any) => {
-      const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id);
+    
+    // Mapeamos asegurando que las propiedades existan con los nombres exactos que Tiendanube pide
+    const productsPayload = itemsProcesables.map((item: any) => {
+      const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
+      
       return {
         variant_id: Number(rawVariantId),
-        quantity: Number(item.cantidad || 1)
+        quantity: Number(item.cantidad || item.quantity || 1)
       };
-    });
+    }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
+
+    // Si el carrito está vacío, cortamos para no tirar error
+    if (productsPayload.length === 0) {
+      console.warn("[Aspen] Carrito vacío o sin IDs válidos al intentar iniciar checkout.");
+      return null;
+    }
 
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/checkouts`, {
       method: 'POST',
@@ -307,16 +316,21 @@ export const obtenerLinkCheckoutPasarela = async (carrito: any[]): Promise<strin
         'Content-Type': 'application/json',
         'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
       },
+      // Pasamos el array mapeado como pide la estructura oficial
       body: JSON.stringify({
-        line_items: lineItemsPayload
+        products: productsPayload
       })
     });
 
     if (response.ok) {
       const data = await response.json();
+      console.log("[Aspen] Checkout creado exitosamente en Tiendanube.");
       return data.checkout_url || null;
+    } else {
+      const errorText = await response.text();
+      console.error(`[Error Tiendanube Checkouts ${response.status}]`, errorText);
+      return null;
     }
-    return null;
   } catch (error) {
     console.error("Error al obtener el checkout seguro:", error);
     return null;
