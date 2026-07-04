@@ -292,11 +292,13 @@ export const crearOrdenTiendanube = async (
 
 // 🚀 FUNCIÓN AISLADA DE REDIRECCIÓN DIRECTA PARA TARJETAS (NATIVO EN ESPAÑOL)
 export const armarLinkCarritoDirecto = (carrito: any[]): string => {
-  const tiendaUrl = "https://aspen-clothing.mitiendanube.com";
+  const tiendaUrl = "https://tienda.aspenclothing.com.ar";
   const itemsProcesables = Array.isArray(carrito) ? carrito : [];
-  if (itemsProcesables.length === 0) return `${tiendaUrl}/carrito`;
+  if (itemsProcesables.length === 0) return `${tiendaUrl}/checkout`;
 
   const primerItem = itemsProcesables[0];
   const rawVariantId = primerItem.variantId || primerItem.variant_id || primerItem.id;
-  return `${tiendaUrl}/carrito/agregar/${rawVariantId}`;
+  
+  // Formato oficial de Tiendanube para iniciar el checkout directo salteándose el carrito intermedio
+  return `${tiendaUrl}/checkout/start?variant_id=${rawVariantId}&quantity=${primerItem.cantidad || 1}`;
 };
