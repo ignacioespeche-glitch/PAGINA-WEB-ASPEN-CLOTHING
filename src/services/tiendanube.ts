@@ -1,10 +1,8 @@
 // src/services/tiendanube.ts
 
 const STORE_ID = '3180620';
-// Tu token actual intacto y seguro que otorga los permisos necesarios
 const ACCESS_TOKEN = '2ba64b9dcf174e0a62f9536806421c518b112558'; 
 
-// Credenciales de la Aspen Web App extraídas del portal de Partners
 export const APP_ID = '33754';
 export const CLIENT_SECRET = 'd9605a9e16fff28f9aac83d56cd092069fd3124f69cb466c';
 
@@ -171,7 +169,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// IMPACTA LA ORDEN DE FORMA OFICIAL PARA TRAER EL CHEKOUT SEGURO SIN ERROR 410
+// MODIFICACIÓN QUIRÚRGICA: Mapea estrictamente la propiedad 'products' para que pase el error 422
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -182,17 +180,14 @@ export const crearOrdenTiendanube = async (
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : [];
     
-    const lineItemsPayload = itemsProcesables.map((item: any) => {
+    const productsPayload = itemsProcesables.map((item: any) => {
       const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
-      const rawProductId = item.id || item.productId || item.product_id || item.parentId;
       
       const variantId = Number(rawVariantId);
-      const productId = Number(rawProductId);
       const cantidad = Number(item.cantidad || item.quantity || 1);
       const precioLimpio = parseFloat(item.precio || item.price || "0");
 
       return {
-        product_id: isNaN(productId) ? 0 : productId,
         variant_id: isNaN(variantId) ? 0 : variantId,
         quantity: isNaN(cantidad) ? 1 : cantidad,
         price: isNaN(precioLimpio) ? "0.00" : precioLimpio.toFixed(2)
@@ -217,7 +212,8 @@ export const crearOrdenTiendanube = async (
       },
       payment_status: metodoPago === 'tarjeta' ? 'pending' : 'paid',
       shipping_status: 'unshipped',
-      line_items: lineItemsPayload,
+      // En la API oficial de órdenes se requiere estrictamente enviar el array bajo la propiedad 'products'
+      products: productsPayload,
       note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
 
@@ -233,13 +229,13 @@ export const crearOrdenTiendanube = async (
 
     if (response.ok) {
       const data = await response.json();
-      console.log("[Aspen] ¡Orden impactada en la API oficial de Tiendanube!");
+      console.log("[Aspen] ¡Orden impactada con éxito en la API oficial de Tiendanube!");
 
-      // Descuento automático de stock manual directo
-      for (const item of lineItemsPayload) {
-        if (item.product_id && item.variant_id) {
+      // Descuento automático de stock directo
+      for (const item of productsPayload) {
+        if (item.variant_id) {
           try {
-            const varRes = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
+            const varRes = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/any/variants/${item.variant_id}`, {
               headers: { 
                 'Authentication': `bearer ${ACCESS_TOKEN}`,
                 'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
@@ -251,7 +247,7 @@ export const crearOrdenTiendanube = async (
               const stockActual = varianteData.stock !== null ? Number(varianteData.stock) : 0;
               const nuevoStock = Math.max(0, stockActual - item.quantity);
 
-              await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
+              await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${varianteData.product_id}/variants/${item.variant_id}`, {
                 method: 'PUT',
                 headers: {
                   'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -267,7 +263,6 @@ export const crearOrdenTiendanube = async (
         }
       }
 
-      // Retorna la URL oficial del checkout dinámico generada de forma encriptada
       return data.checkout_url || "SUCCESS";
     } else {
       const errorText = await response.text();
@@ -280,7 +275,6 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// Retorno fallback seguro para evitar bucles de navegación locales
 export const armarLinkCarritoDirecto = (carrito: any[]): string => {
   const tiendaUrl = "https://aspen-clothing.mitiendanube.com";
   const itemsProcesables = Array.isArray(carrito) ? carrito : [];
