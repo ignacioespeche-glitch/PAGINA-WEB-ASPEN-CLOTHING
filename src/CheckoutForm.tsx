@@ -99,17 +99,20 @@ export const CheckoutForm = () => {
       return;
     }
 
-    let datosTarjetaPayload = undefined;
+    setCargandoPasarela(true);
+
+    // Si es tarjeta, redirigimos al checkout nativo de la tienda para que complete los datos allá
     if (metodoPago === 'tarjeta') {
-      datosTarjetaPayload = {
-        marca: 'Pago Nube',
-        order_id_or_token: 'Externo',
-        ultimosCuatro: 'Ext.',
-        cuotas: '1'
-      };
+      // Usamos el ID de tu tienda que vimos en tiendanube.ts
+      const urlCheckoutTiendanube = `https://www.tiendanube.com/checkout/v3/start/3180620`;
+      
+      localStorage.removeItem('aspen_cart');
+      localStorage.removeItem('aspen_costo_envio');
+      
+      window.location.href = urlCheckoutTiendanube;
+      return;
     }
 
-    setCargandoPasarela(true);
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
@@ -118,18 +121,13 @@ export const CheckoutForm = () => {
       carrito, 
       metodoPago, 
       cuponAplicado, 
-      datosTarjetaPayload ? { ...datosTarjetaPayload, marca: datosTarjetaPayload.marca } : undefined
+      undefined
     );
 
     setCargandoPasarela(false);
 
     if (respuestaApi) {
       console.log("[Aspen] ¡Éxito! Orden impactada en Tiendanube.");
-
-      if (metodoPago === 'tarjeta' && respuestaApi.startsWith('http')) {
-        window.location.href = respuestaApi;
-        return;
-      }
 
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
