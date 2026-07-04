@@ -288,50 +288,18 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 FUNCIÓN DE CHECKOUTS CORREGIDA (DUAL-PAYLOAD) PARA MANEJAR EL ARRAY DE MANERA ABSOLUTA
-export const obtenerLinkCheckoutPasarela = async (carrito: any[]): Promise<string | null> => {
-  try {
-    const itemsProcesables = Array.isArray(carrito) ? carrito : [];
-    
-    const productsPayload = itemsProcesables.map((item: any) => {
-      const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
-      
-      return {
-        variant_id: Number(rawVariantId),
-        quantity: Number(item.cantidad || item.quantity || 1)
-      };
-    }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
+// 🚀 FUNCIÓN DEFINITIVA: Genera la URL directa de compra unificada para meter la tarjeta sin depender del endpoint 404
+export const armarLinkCarritoDirecto = (carrito: any[]): string => {
+  const tiendaUrl = "https://aspen-clothing.mitiendanube.com"; // Tu subdominio de Tiendanube
+  
+  const itemsProcesables = Array.isArray(carrito) ? carrito : [];
+  
+  // Mapeamos los productos al formato de link de Tiendanube: /cart/add?variant_id=cantidad
+  const queryParams = itemsProcesables.map((item: any) => {
+    const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
+    const cantidad = item.cantidad || item.quantity || 1;
+    return `variant_${rawVariantId}=${cantidad}`;
+  }).join('&');
 
-    if (productsPayload.length === 0) {
-      console.warn("[Aspen] Carrito vacío o sin IDs válidos al intentar iniciar checkout.");
-      return null;
-    }
-
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/checkouts`, {
-      method: 'POST',
-      headers: {
-        'Authentication': `bearer ${ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-      },
-      // Pasamos line_items y products juntos para que cualquier validador de Tiendanube tome el array correctamente
-      body: JSON.stringify({
-        products: productsPayload,
-        line_items: productsPayload
-      })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log("[Aspen] Checkout creado exitosamente en Tiendanube.");
-      return data.checkout_url || null;
-    } else {
-      const errorText = await response.text();
-      console.error(`[Error Tiendanube Checkouts ${response.status}]`, errorText);
-      return null;
-    }
-  } catch (error) {
-    console.error("Error al obtener el checkout seguro:", error);
-    return null;
-  }
+  return `${tiendaUrl}/cart/add?${queryParams}`;
 };

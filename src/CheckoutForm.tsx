@@ -1,7 +1,7 @@
 // src/CheckoutForm.tsx
 import { useState } from 'react';
 import { useCart } from './CartContext';
-import { validarCuponTiendanube, crearOrdenTiendanube, obtenerLinkCheckoutPasarela, type CuponDescuento } from './services/tiendanube';
+import { validarCuponTiendanube, crearOrdenTiendanube, armarLinkCarritoDirecto, type CuponDescuento } from './services/tiendanube';
 
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
@@ -101,22 +101,15 @@ export const CheckoutForm = () => {
 
     setCargandoPasarela(true);
 
-    // LLAMADA EN VIVO AL ENDPOINT DE CHECKOUTS DE TIENDANUBE
     if (metodoPago === 'tarjeta') {
-      const urlDinamicaPagoNube = await obtenerLinkCheckoutPasarela(carrito);
+      const urlPasarelaDirecta = armarLinkCarritoDirecto(carrito);
+      
+      localStorage.removeItem('aspen_cart');
+      localStorage.removeItem('aspen_costo_envio');
       
       setCargandoPasarela(false);
-
-      if (urlDinamicaPagoNube) {
-        localStorage.removeItem('aspen_cart');
-        localStorage.removeItem('aspen_costo_envio');
-        // Redirige al cliente al entorno encriptado real de Pago Nube sin pasar por el 404
-        window.location.href = urlDinamicaPagoNube;
-        return;
-      } else {
-        setErrorPasarela("NO SE PUDO GENERAR EL ENTORNO SEGURO DE PAGO NUBE. INTENTE MÁS TARDE.");
-        return;
-      }
+      window.location.href = urlPasarelaDirecta;
+      return;
     }
 
     const datosCliente = { email, nombre, telefono, direccion, localidad };
@@ -295,7 +288,7 @@ export const CheckoutForm = () => {
                       textTransform: 'uppercase'
                     }}
                   >
-                    {cargandoPasarela ? 'PROCESANDO ENTORNO...' : 'PAGO NUBE SEGURO'}
+                    {cargandoPasarela ? 'REDIRECCIONANDO...' : 'PAGO NUBE SEGURO'}
                   </button>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
