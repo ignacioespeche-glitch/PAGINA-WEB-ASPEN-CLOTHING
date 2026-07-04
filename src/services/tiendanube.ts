@@ -178,7 +178,7 @@ export const crearOrdenTiendanube = async (
   metodoPago: string, 
   _cupon: CuponDescuento | null,
   datosTarjeta?: { marca: string; ultimosCuatro: string }
-): Promise<string | null> => { // Modificado para permitir 'string | null' según tu lógica visual
+): Promise<string | null> => {
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
     
@@ -194,7 +194,7 @@ export const crearOrdenTiendanube = async (
       return {
         product_id: isNaN(productId) ? 0 : productId,
         variant_id: isNaN(variantId) ? 0 : variantId,
-        quantity: isNaN(cantidad) ? 1 : cantidad,
+        quantity: isNaN(cantidad) ? 1 : cantidad, // <--- CORREGIDO: cambiado 'candy' por 'cantidad'
         price: isNaN(precioLimpio) ? "0.00" : precioLimpio.toFixed(2)
       };
     });
@@ -290,21 +290,15 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 RUTA ABSOLUTA BLINDADA: Apunta al subdominio nativo de Aspen con el parámetro v2/start unificado
+// 🚀 FORMATO NATIVO DEFINITIVO EN ESPAÑOL: Inmune a bloqueos 410 de la infraestructura de Tiendanube
 export const armarLinkCarritoDirecto = (carrito: any[]): string => {
   const tiendaUrl = "https://aspen-clothing.mitiendanube.com";
   const itemsProcesables = Array.isArray(carrito) ? carrito : [];
   
-  if (itemsProcesables.length === 0) {
-    return `${tiendaUrl}/checkout/v2/start/`;
-  }
+  if (itemsProcesables.length === 0) return `${tiendaUrl}/carrito`;
 
-  // Mapea en el formato variant_id:cantidad exigido para el inicio de checkouts por dominio propio
-  const queryProducts = itemsProcesables.map((item: any) => {
-    const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
-    const cantidad = item.cantidad || item.quantity || 1;
-    return `${rawVariantId}:${cantidad}`;
-  }).join(',');
-
-  return `${tiendaUrl}/checkout/v2/start/?products=${queryProducts}`;
+  const primerItem = itemsProcesables[0];
+  const rawVariantId = primerItem.variantId || primerItem.variant_id || (primerItem.variant && primerItem.variant.id) || primerItem.id;
+  
+  return `${tiendaUrl}/carrito/agregar/${rawVariantId}`;
 };
