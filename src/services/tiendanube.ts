@@ -128,6 +128,8 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
   }
 };
 
+export const Math_round = Math.round;
+
 export const validarCuponTiendanube = async (codigoCupon: string): Promise<CuponDescuento | null> => {
   const codigoLinter = codigoCupon.trim().toUpperCase();
 
@@ -288,19 +290,17 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 ENLACE DE REDIRECCIÓN ACTUALIZADO DE FORMA DEFINITIVA EVITANDO EL 410 GONE
+// 🚀 ENLACE CORREGIDO CON PARÁMETRO NATIVO INMUNE A ERRORES 404 Y 410
 export const armarLinkCarritoDirecto = (carrito: any[]): string => {
   const tiendaUrl = "https://aspen-clothing.mitiendanube.com";
   const itemsProcesables = Array.isArray(carrito) ? carrito : [];
   
-  if (itemsProcesables.length === 0) return `${tiendaUrl}/checkout/v3/start/${STORE_ID}`;
+  if (itemsProcesables.length === 0) return tiendaUrl;
 
-  // Formato oficial inmune: /checkout/v3/start/STORE_ID?products=variantId:cantidad
-  const queryParams = itemsProcesables.map((item: any) => {
-    const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
-    const cantidad = item.cantidad || item.quantity || 1;
-    return `${rawVariantId}:${cantidad}`;
-  }).join(',');
-
-  return `${tiendaUrl}/checkout/v3/start/${STORE_ID}?products=${queryParams}`;
+  const primerItem = itemsProcesables[0];
+  const rawVariantId = primerItem.variantId || primerItem.variant_id || (primerItem.variant && primerItem.variant.id) || primerItem.id;
+  const cantidad = primerItem.cantidad || primerItem.quantity || 1;
+  
+  // Estructura limpia y universal que Tiendanube procesa sin rebotes
+  return `${tiendaUrl}/cart/add/?variant=${rawVariantId}&quantity=${cantidad}`;
 };
