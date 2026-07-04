@@ -288,16 +288,19 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 FORMATO AJUSTADO: Usa la estructura unificada nativa para inyectar variantes sin fallar con 410
+// 🚀 ENLACE DE REDIRECCIÓN ACTUALIZADO DE FORMA DEFINITIVA EVITANDO EL 410 GONE
 export const armarLinkCarritoDirecto = (carrito: any[]): string => {
   const tiendaUrl = "https://aspen-clothing.mitiendanube.com";
   const itemsProcesables = Array.isArray(carrito) ? carrito : [];
   
-  if (itemsProcesables.length === 0) return tiendaUrl;
+  if (itemsProcesables.length === 0) return `${tiendaUrl}/checkout/v3/start/${STORE_ID}`;
 
-  // Tomamos la primera variante válida del carrito para generar el enlace directo limpio de entrada
-  const primerItem = itemsProcesables[0];
-  const rawVariantId = primerItem.variantId || primerItem.variant_id || (primerItem.variant && primerItem.variant.id) || primerItem.id;
-  
-  return `${tiendaUrl}/cart/add/${rawVariantId}/`;
+  // Formato oficial inmune: /checkout/v3/start/STORE_ID?products=variantId:cantidad
+  const queryParams = itemsProcesables.map((item: any) => {
+    const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
+    const cantidad = item.cantidad || item.quantity || 1;
+    return `${rawVariantId}:${cantidad}`;
+  }).join(',');
+
+  return `${tiendaUrl}/checkout/v3/start/${STORE_ID}?products=${queryParams}`;
 };

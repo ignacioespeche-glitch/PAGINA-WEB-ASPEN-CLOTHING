@@ -166,7 +166,7 @@ export const CheckoutForm = () => {
         {metodoPago === 'tarjeta' && (
           <div style={{ border: '1px solid #16a34a', backgroundColor: '#f0fdf4', padding: '16px', borderRadius: '4px', marginBottom: '24px', textAlign: 'left' }}>
             <p style={{ margin: 0, fontSize: '12px', color: '#14532d', lineHeight: '1.5' }}>
-              <strong>🔒 Transacción Segura Garantizada:</strong> Tu pago ha sido processed con éxito de forma encriptada bajo el entorno certificado de Pago Nube, resguardando la privacidad de tus datos bancarios en todo momento.
+              <strong>🔒 Transacción Segura Garantizada:</strong> Tu pago ha sido procesado con éxito de forma encriptada bajo el entorno certificado de Pago Nube, resguardando la privacidad de tus datos bancarios en todo momento.
             </p>
           </div>
         )}
