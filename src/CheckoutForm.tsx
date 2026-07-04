@@ -22,14 +22,6 @@ export const CheckoutForm = () => {
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
-  // Estados locales para la tarjeta
-  const [numeroTarjeta, setNumeroTarjeta] = useState('');
-  const [mesVencimiento, setMesVencimiento] = useState('');
-  const [anioVencimiento, setAnioVencimiento] = useState('');
-  const [cvvTarjeta, setCvvTarjeta] = useState('');
-  const [nombreTarjeta, setNombreTarjeta] = useState('');
-  const [cuotas, setCuotas] = useState('1'); 
-
   // Estado para capturar errores estéticos
   const [errorPasarela, setErrorPasarela] = useState(''); 
 
@@ -45,38 +37,6 @@ export const CheckoutForm = () => {
   // Link de redirección de Mercado Pago si se requiere click manual
   const [linkMercadoPago, setLinkMercadoPago] = useState('');
   const [cargandoPasarela, setCargandoPasarela] = useState(false);
-
-  const meses = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
-  const anioActual = 2026;
-  const anios = Array.from({ length: 2070 - anioActual + 1 }, (_, i) => String(anioActual + i));
-
-  const handleNumeroTarjetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/\D/g, ''); 
-    const formateado = input.match(/.{1,4}/g)?.join(' ') || ''; 
-    if (formateado.length <= 19) { 
-      setNumeroTarjeta(formateado);
-    }
-  };
-
-  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/\D/g, ''); 
-    if (input.length <= 3) {
-      setCvvTarjeta(input);
-    }
-  };
-
-  const obtenerMarcaTarjeta = (numero: string) => {
-    const limpio = numero.replace(/\s+/g, '');
-    if (limpio.startsWith('4')) return 'Visa';
-    const prefijoDos = parseInt(limpio.substring(0, 2), 10);
-    const prefijoFour = parseInt(limpio.substring(0, 4), 10);
-    if ((prefijoDos >= 51 && prefijoDos <= 55) || (prefijoFour >= 2221 && prefijoFour <= 2720)) {
-      return 'Mastercard';
-    }
-    return '';
-  };
-
-  const marcaDetectada = obtenerMarcaTarjeta(numeroTarjeta);
 
   let descuentoCalculado = 0;
   if (cuponAplicado) {
@@ -108,7 +68,6 @@ export const CheckoutForm = () => {
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
-  // 🚀 LINK DE WHATSAPP EXCLUSIVO PARA VALIDACIÓN SEGURA DE TARJETAS
   const obtenerLinkWhatsAppTarjetaExito = (montoFinal: number) => {
     const telefonoLocal = '542612515727';
     const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
@@ -142,21 +101,14 @@ export const CheckoutForm = () => {
 
     let datosTarjetaPayload = undefined;
     if (metodoPago === 'tarjeta') {
-      if (!numeroTarjeta || !mesVencimiento || !anioVencimiento || !cvvTarjeta || !nombreTarjeta) {
-        setErrorPasarela("POR FAVOR COMPLETA TODOS LOS DATOS DE TU TARJETA.");
-        return;
-      }
-      
-      const tarjetaLimpia = numeroTarjeta.replace(/\s+/g, '');
       datosTarjetaPayload = {
-        marca: marcaDetectada || 'Desconocida',
-        order_id_or_token: tarjetaLimpia.substring(tarjetaLimpia.length - 4),
-        ultimosCuatro: tarjetaLimpia.substring(tarjetaLimpia.length - 4),
-        cuotas: cuotas
+        marca: 'Pago Nube',
+        order_id_or_token: 'Externo',
+        ultimosCuatro: 'Ext.',
+        cuotas: '1'
       };
     }
 
-    // CIRCUITO ORIGINAL INTACTO (Descuenta stock variante por variante en backend)
     setCargandoPasarela(true);
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
@@ -166,12 +118,11 @@ export const CheckoutForm = () => {
       carrito, 
       metodoPago, 
       cuponAplicado, 
-      datosTarjetaPayload ? { ...datosTarjetaPayload, marca: `${datosTarjetaPayload.marca} (${cuotas} pagos)` } : undefined
+      datosTarjetaPayload ? { ...datosTarjetaPayload, marca: datosTarjetaPayload.marca } : undefined
     );
 
     setCargandoPasarela(false);
 
-    // 💳 INTERVENCIÓN QUIRÚRGICA CONTROLADA: Redirección forzada al enlace externo seguro de Pago Nube si existe
     if (respuestaApi) {
       console.log("[Aspen] ¡Éxito! Orden impactada en Tiendanube.");
 
@@ -195,14 +146,9 @@ export const CheckoutForm = () => {
     }
   };
 
-  // 📋 DETALLE VISUAL DE ÉXITO AJUSTADO SEGÚN EL REQUISITO DE SEGURIDAD ORDENADO
   if (compraExitosa) {
     const montoSeguro = (montoFinalCobrado || 0).toLocaleString('es-AR');
     const envioSeguro = (costoEnvio || 0).toLocaleString('es-AR');
-
-    // Cálculos dinámicos en vivo para las cuotas
-    const valorCuotaDividido = Math.round(montoFinalCobrado / Number(cuotas));
-    const labelCuotaInformativa = `${cuotas} ${Number(cuotas) === 1 ? 'pago' : 'cuotas'} de $${valorCuotaDividido.toLocaleString('es-AR')},00 sin interés`;
 
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
@@ -217,14 +163,13 @@ export const CheckoutForm = () => {
         </h1>
         
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro systema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
-        {/* 🔒 TEXTO DE RESPALDO Y SEGURIDAD EXCLUSIVO PARA TARJETA */}
         {metodoPago === 'tarjeta' && (
           <div style={{ border: '1px solid #16a34a', backgroundColor: '#f0fdf4', padding: '16px', borderRadius: '4px', marginBottom: '24px', textAlign: 'left' }}>
             <p style={{ margin: 0, fontSize: '12px', color: '#14532d', lineHeight: '1.5' }}>
-              <strong>🔒 Transacción Secura Garantizada:</strong> Tu pago ha sido procesado de forma encriptada bajo el entorno certificado de Pago Nube, resguardando la privacidad de tus datos bancarios en todo momento.
+              <strong>🔒 Transacción Segura Garantizada:</strong> Tu pago ha sido procesado de forma encriptada bajo el entorno certificado de Pago Nube, resguardando la privacidad de tus datos bancarios en todo momento.
             </p>
           </div>
         )}
@@ -234,11 +179,6 @@ export const CheckoutForm = () => {
             Comprobante del Pedido
           </h3>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método de pago:</strong> {metodoPago === 'tarjeta' ? 'Tarjeta de Crédito o Débito (Pago Nube)' : metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
-          
-          {/* Muestra el desglose del plan de pagos elegido si fue tarjeta */}
-          {metodoPago === 'tarjeta' && (
-            <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Plan de pagos seleccionado:</strong> {labelCuotaInformativa}</p>
-          )}
 
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Destino de entrega:</strong> {direccion}, {localidad || 'Mendoza'}</p>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Costo de Envío:</strong> ${envioSeguro},00</p>
@@ -248,7 +188,6 @@ export const CheckoutForm = () => {
           </p>
         </div>
 
-        {/* 🟢 BLOQUE INTERACTIVO DE WHATSAPP EXCLUSIVO PARA TARJETA */}
         {metodoPago === 'tarjeta' && (
           <div style={{ border: '1px solid #000', padding: '20px', textAlign: 'center', backgroundColor: '#fff', marginBottom: '#32px' }}>
             <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#000', lineHeight: '1.6', fontWeight: 500 }}>
@@ -334,47 +273,36 @@ export const CheckoutForm = () => {
 
             <div style={{ marginTop: '4px' }}>
               {metodoPago === 'tarjeta' && (
-                <div style={{ border: '1px solid #000', padding: '24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.5px' }}>TARJETA DE CRÉDITO</span>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <span style={{ fontSize: '9px', fontWeight: 700, border: marcaDetectada === 'Visa' ? '2px solid #000' : '1px solid #ccc', padding: '2px 6px', color: '#1A458B', backgroundColor: marcaDetectada === 'Visa' ? '#f0f4ff' : 'transparent' }}>VISA</span>
-                      <span style={{ fontSize: '9px', fontWeight: 700, border: marcaDetectada === 'Mastercard' ? '2px solid #000' : '1px solid #ccc', padding: '2px 6px', color: '#EA3435', backgroundColor: marcaDetectada === 'Mastercard' ? '#fff0f0' : 'transparent' }}>MC</span>
-                    </div>
-                  </div>
-
-                  <input type="text" placeholder="NÚMERO DE TARJETA" value={numeroTarjeta} onChange={handleNumeroTarjetaChange} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
+                <div style={{ border: '1px solid #000', padding: '32px 24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center' }}>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', border: '1px solid #000', padding: '6px 10px', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>MES</span>
-                        <select value={mesVencimiento} onChange={(e) => setMesVencimiento(e.target.value)} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '11px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', padding: '4px 0' }}>
-                          <option value="">--</option>
-                          {meses.map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid #eee', paddingLeft: '8px' }}>
-                        <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>AÑO</span>
-                        <select value={anioVencimiento} onChange={(e) => setAnioVencimiento(e.target.value)} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '11px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', padding: '4px 0' }}>
-                          <option value="">----</option>
-                          {anios.map(a => <option key={a} value={a}>{a}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <input type="text" placeholder="CÓDIGO SEG." value={cvvTarjeta} onChange={handleCvvChange} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
+                  <button
+                    type="submit"
+                    disabled={cargandoPasarela}
+                    style={{ 
+                      width: '100%', 
+                      background: '#000', 
+                      color: '#fff', 
+                      border: '1px solid #000', 
+                      padding: '16px', 
+                      fontWeight: 700, 
+                      fontSize: '11px', 
+                      letterSpacing: '2px', 
+                      cursor: 'pointer', 
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    {cargandoPasarela ? 'PROCESANDO ENTORNO...' : 'PAGO NUBE SEGURO'}
+                  </button>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#000', fontWeight: 700, letterSpacing: '0.5px' }}>
+                      🔒 PagoNube es 100% seguro
+                    </p>
+                    <p style={{ margin: 0, fontSize: '11px', color: '#666', lineHeight: '1.5', maxWidth: '400px' }}>
+                      Al iniciar la compra, serás redirigido de forma encriptada y protegida a la plataforma oficial de Tiendanube para colocar los datos de tu tarjeta con total tranquilidad.
+                    </p>
                   </div>
 
-                  <input type="text" placeholder="NOMBRE COMO FIGURA EN LA TARJETA" value={nombreTarjeta} onChange={(e) => setNombreTarjeta(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none', textTransform: 'uppercase' }} />
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #000', padding: '10px 14px' }}>
-                    <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>PLAN DE PAGOS</span>
-                    <select value={cuotas} onChange={(e) => setCuotas(e.target.value)} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '11px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', width: '100%', fontWeight: 600 }}>
-                      <option value="1">1 pago de ${montoFinalAMostrar.toLocaleString('es-AR')},00 sin interés</option>
-                      <option value="2">2 cuotas de ${(Math.round(montoFinalAMostrar / 2)).toLocaleString('es-AR')},00 sin interés</option>
-                      <option value="3">3 cuotas de ${(Math.round(montoFinalAMostrar / 3)).toLocaleString('es-AR')},00 sin interés</option>
-                    </select>
-                  </div>
                 </div>
               )}
 
@@ -404,21 +332,13 @@ export const CheckoutForm = () => {
             </span>
           )}
 
-          {/* 🔘 CONTROL INTELIGENTE DE REDIRECCIÓN EN CHECKOUT (MANTIENE LA VARIABLE linkMercadoPago SOLO COMO SOPORTE VISUAL INTACTO) */}
-          {linkMercadoPago ? (
-            <a 
-              href={linkMercadoPago}
-              style={{ display: 'block', width: '100%', background: '#0056b3', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px', textAlign: 'center', textDecoration: 'none' }}
-            >
-              🚀 PROCEDER AL PAGO SEGURO
-            </a>
-          ) : (
+          {!linkMercadoPago && metodoPago !== 'tarjeta' && (
             <button 
               type="submit" 
               disabled={cargandoPasarela}
               style={{ width: '100%', background: cargandoPasarela ? '#666' : '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
             >
-              {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : metodoPago === 'tarjeta' ? 'IR A PAGO TIENDANUBE' : 'PAGAR AHORA'}
+              {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
             </button>
           )}
         </div>
