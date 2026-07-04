@@ -288,18 +288,16 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 FUNCIÓN DEFINITIVA: Genera la URL directa de compra unificada para meter la tarjeta sin depender del endpoint 404
+// 🚀 FORMATO AJUSTADO: Usa la estructura unificada nativa para inyectar variantes sin fallar con 410
 export const armarLinkCarritoDirecto = (carrito: any[]): string => {
-  const tiendaUrl = "https://aspen-clothing.mitiendanube.com"; // Tu subdominio de Tiendanube
-  
+  const tiendaUrl = "https://aspen-clothing.mitiendanube.com";
   const itemsProcesables = Array.isArray(carrito) ? carrito : [];
   
-  // Mapeamos los productos al formato de link de Tiendanube: /cart/add?variant_id=cantidad
-  const queryParams = itemsProcesables.map((item: any) => {
-    const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
-    const cantidad = item.cantidad || item.quantity || 1;
-    return `variant_${rawVariantId}=${cantidad}`;
-  }).join('&');
+  if (itemsProcesables.length === 0) return tiendaUrl;
 
-  return `${tiendaUrl}/cart/add?${queryParams}`;
+  // Tomamos la primera variante válida del carrito para generar el enlace directo limpio de entrada
+  const primerItem = itemsProcesables[0];
+  const rawVariantId = primerItem.variantId || primerItem.variant_id || (primerItem.variant && primerItem.variant.id) || primerItem.id;
+  
+  return `${tiendaUrl}/cart/add/${rawVariantId}/`;
 };
