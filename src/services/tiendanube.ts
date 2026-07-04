@@ -290,20 +290,21 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 ENLACE DEFINITIVO E INMUNE A 410: Usa la estructura global certificada del checkout start de Tiendanube
+// 🚀 RUTA ABSOLUTA BLINDADA: Apunta al subdominio nativo de Aspen con el parámetro v2/start unificado
 export const armarLinkCarritoDirecto = (carrito: any[]): string => {
+  const tiendaUrl = "https://aspen-clothing.mitiendanube.com";
   const itemsProcesables = Array.isArray(carrito) ? carrito : [];
   
   if (itemsProcesables.length === 0) {
-    return `https://www.tiendanube.com/checkout/start/v3/?store_id=${STORE_ID}`;
+    return `${tiendaUrl}/checkout/v2/start/`;
   }
 
-  // Genera la query de productos en el formato variant_id:cantidad separados por comas
+  // Mapea en el formato variant_id:cantidad exigido para el inicio de checkouts por dominio propio
   const queryProducts = itemsProcesables.map((item: any) => {
     const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
     const cantidad = item.cantidad || item.quantity || 1;
     return `${rawVariantId}:${cantidad}`;
   }).join(',');
 
-  return `https://www.tiendanube.com/checkout/start/v3/?store_id=${STORE_ID}&products=${queryProducts}`;
+  return `${tiendaUrl}/checkout/v2/start/?products=${queryProducts}`;
 };
