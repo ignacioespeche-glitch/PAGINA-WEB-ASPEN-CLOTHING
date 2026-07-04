@@ -288,12 +288,11 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 FUNCIÓN DE CHECKOUTS CORREGIDA PARA EVITAR EL ERROR 400 BAD REQUEST
+// 🚀 FUNCIÓN DE CHECKOUTS CORREGIDA (DUAL-PAYLOAD) PARA MANEJAR EL ARRAY DE MANERA ABSOLUTA
 export const obtenerLinkCheckoutPasarela = async (carrito: any[]): Promise<string | null> => {
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : [];
     
-    // Mapeamos asegurando que las propiedades existan con los nombres exactos que Tiendanube pide
     const productsPayload = itemsProcesables.map((item: any) => {
       const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id) || item.id;
       
@@ -303,7 +302,6 @@ export const obtenerLinkCheckoutPasarela = async (carrito: any[]): Promise<strin
       };
     }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
 
-    // Si el carrito está vacío, cortamos para no tirar error
     if (productsPayload.length === 0) {
       console.warn("[Aspen] Carrito vacío o sin IDs válidos al intentar iniciar checkout.");
       return null;
@@ -316,9 +314,10 @@ export const obtenerLinkCheckoutPasarela = async (carrito: any[]): Promise<strin
         'Content-Type': 'application/json',
         'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
       },
-      // Pasamos el array mapeado como pide la estructura oficial
+      // Pasamos line_items y products juntos para que cualquier validador de Tiendanube tome el array correctamente
       body: JSON.stringify({
-        products: productsPayload
+        products: productsPayload,
+        line_items: productsPayload
       })
     });
 
