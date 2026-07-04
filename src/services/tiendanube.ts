@@ -4,6 +4,10 @@ const STORE_ID = '3180620';
 // Tu token actual intacto, seguro y sin tocar
 const ACCESS_TOKEN = '2ba64b9dcf174e0a62f9536806421c518b112558'; 
 
+// Credenciales de la Aspen Web App extraídas del portal de Partners
+export const APP_ID = '33754';
+export const CLIENT_SECRET = 'd9605a9e16fff28f9aac83d56cd092069fd3124f69cb466c';
+
 export interface TiendanubeProducto {
   id: number;
   name: { es: string };
@@ -169,7 +173,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// IMPACTA DIRECTO EN EL PANEL DE VENTAS REALES Y PREVIENE ERRORES DE LLAVES
+// IMPACTA DIRECTO EN EL PANEL DE VENTAS REALES Y PREVIENE ERRORES DE LLAVES (TOTALMENTE INTACTO)
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -284,4 +288,15 @@ export const crearOrdenTiendanube = async (
     console.error("Error crítico:", error);
     return null;
   }
+};
+
+// 🚀 FUNCIÓN AISLADA DE REDIRECCIÓN DIRECTA PARA TARJETAS (NATIVO EN ESPAÑOL)
+export const armarLinkCarritoDirecto = (carrito: any[]): string => {
+  const tiendaUrl = "https://aspen-clothing.mitiendanube.com";
+  const itemsProcesables = Array.isArray(carrito) ? carrito : [];
+  if (itemsProcesables.length === 0) return `${tiendaUrl}/carrito`;
+
+  const primerItem = itemsProcesables[0];
+  const rawVariantId = primerItem.variantId || primerItem.variant_id || primerItem.id;
+  return `${tiendaUrl}/carrito/agregar/${rawVariantId}`;
 };

@@ -1,7 +1,7 @@
 // src/CheckoutForm.tsx
 import { useState } from 'react';
 import { useCart } from './CartContext';
-import { validarCuponTiendanube, crearOrdenTiendanube, type CuponDescuento } from './services/tiendanube';
+import { validarCuponTiendanube, crearOrdenTiendanube, armarLinkCarritoDirecto, type CuponDescuento } from './services/tiendanube';
 
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
@@ -42,8 +42,6 @@ export const CheckoutForm = () => {
   const [compraExitosa, setCompraExitosa] = useState(false); 
   const [montoFinalCobrado, setMontoFinalCobrado] = useState(0);
 
-  // Link de redirección de Mercado Pago si se requiere click manual
-  const [linkMercadoPago, setLinkMercadoPago] = useState('');
   const [cargandoPasarela, setCargandoPasarela] = useState(false);
 
   const meses = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
@@ -108,15 +106,6 @@ export const CheckoutForm = () => {
     return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
   };
 
-  // 🚀 LINK DE WHATSAPP EXCLUSIVO PARA VALIDACIÓN SEGURA DE TARJETAS
-  const obtenerLinkWhatsAppTarjetaExito = (montoFinal: number) => {
-    const telefonoLocal = '542612515727';
-    const nombreCliente = nombre.trim() || '[Ingresar Nombre]';
-    const totalPedido = montoFinal.toLocaleString('es-AR');
-    const mensaje = `¡Hola Aspen! Acabo de realizar mi compra con tarjeta a nombre de ${nombreCliente} por un total de $${totalPedido},00. Solicito la factura, el comprobante de venta y el seguimiento del código de envío por este medio.`;
-    return `https://wa.me/${telefonoLocal}?text=${encodeURIComponent(mensaje)}`;
-  };
-
   const handleAplicarCupon = async () => {
     setErrorCupon('');
     if (!cuponInput.trim()) return;
@@ -133,30 +122,30 @@ export const CheckoutForm = () => {
   const handlePagarAhoraSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorPasarela(''); 
-    setLinkMercadoPago('');
     
     if (!email.trim() || !nombre.trim() || !direccion.trim()) {
       setErrorPasarela("POR FAVOR COMPLETA LOS CAMPOS OBLIGATORIOS DE ENVÍO.");
       return;
     }
 
-    let datosTarjetaPayload = undefined;
+    // 🚀 MODIFICACIÓN QUIRÚRGICA EXCLUSIVA: Si eligen tarjeta, viaja directo sin tocar nada de tu backend
     if (metodoPago === 'tarjeta') {
       if (!numeroTarjeta || !mesVencimiento || !anioVencimiento || !cvvTarjeta || !nombreTarjeta) {
         setErrorPasarela("POR FAVOR COMPLETA TODOS LOS DATOS DE TU TARJETA.");
         return;
       }
       
-      const tarjetaLimpia = numeroTarjeta.replace(/\s+/g, '');
-      datosTarjetaPayload = {
-        marca: marcaDetectada || 'Desconocida',
-        order_id_or_token: tarjetaLimpia.substring(tarjetaLimpia.length - 4),
-        ultimosCuatro: tarjetaLimpia.substring(tarjetaLimpia.length - 4),
-        cuotas: cuotas
-      };
+      const urlRedireccionPasarela = armarLinkCarritoDirecto(carrito);
+      
+      localStorage.removeItem('aspen_cart');
+      localStorage.removeItem('aspen_costo_envio');
+      if (typeof setCarrito === 'function') setCarrito([]);
+      
+      window.location.href = urlRedireccionPasarela;
+      return;
     }
 
-    // CIRCUITO ORIGINAL INTACTO (Descuenta stock variante por variante en backend)
+    // CIRCUITO ORIGINAL INTACTO PARA TRANSFERENCIA / EFECTIVO (Descuenta stock en backend)
     setCargandoPasarela(true);
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
@@ -166,7 +155,7 @@ export const CheckoutForm = () => {
       carrito, 
       metodoPago, 
       cuponAplicado, 
-      datosTarjetaPayload ? { ...datosTarjetaPayload, marca: `${datosTarjetaPayload.marca} (${cuotas} pagos)` } : undefined
+      undefined
     );
 
     setCargandoPasarela(false);
@@ -189,18 +178,16 @@ export const CheckoutForm = () => {
     }
   };
 
-  // 📋 DETALLE VISUAL DE ÉXITO AJUSTADO SEGÚN EL REQUISITO DE SEGURIDAD ORDENADO
   if (compraExitosa) {
     const montoSeguro = (montoFinalCobrado || 0).toLocaleString('es-AR');
     const envioSeguro = (costoEnvio || 0).toLocaleString('es-AR');
 
-    // Cálculos dinámicos en vivo para las cuotas
     const valorCuotaDividido = Math.round(montoFinalCobrado / Number(cuotas));
     const labelCuotaInformativa = `${cuotas} ${Number(cuotas) === 1 ? 'pago' : 'cuotas'} de $${valorCuotaDividido.toLocaleString('es-AR')},00 sin interés`;
 
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#f0fdf4', marginBottom: '24px' }}>
+        <div style={{ alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#f0fdf4', marginBottom: '24px', display: 'inline-flex' }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
@@ -214,22 +201,12 @@ export const CheckoutForm = () => {
           Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
-        {/* 🔒 TEXTO DE RESPALDO Y SEGURIDAD EXCLUSIVO PARA TARJETA */}
-        {metodoPago === 'tarjeta' && (
-          <div style={{ border: '1px solid #16a34a', backgroundColor: '#f0fdf4', padding: '16px', borderRadius: '4px', marginBottom: '24px', textAlign: 'left' }}>
-            <p style={{ margin: 0, fontSize: '12px', color: '#14532d', lineHeight: '1.5' }}>
-              <strong>🔒 Transacción Segura Garantizada:</strong> Tu pago ha sido procesado de forma encriptada bajo el entorno certificado de Pago Nube, resguardando la privacidad de tus datos bancarios en todo momento.
-            </p>
-          </div>
-        )}
-
-        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '32px' }}>
+        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
           <h3 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', margin: '0 0 16px 0', textTransform: 'uppercase', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
             Comprobante del Pedido
           </h3>
-          <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método de pago:</strong> {metodoPago === 'tarjeta' ? 'Tarjeta de Crédito o Débito (Pago Nube)' : metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
+          <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método de pago:</strong> {metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
           
-          {/* Muestra el desglose del plan de pagos elegido si fue tarjeta */}
           {metodoPago === 'tarjeta' && (
             <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Plan de pagos seleccionado:</strong> {labelCuotaInformativa}</p>
           )}
@@ -241,23 +218,6 @@ export const CheckoutForm = () => {
             <span>${montoSeguro},00</span>
           </p>
         </div>
-
-        {/* 🟢 BLOQUE INTERACTIVO DE WHATSAPP EXCLUSIVO PARA TARJETA */}
-        {metodoPago === 'tarjeta' && (
-          <div style={{ border: '1px solid #000', padding: '20px', textAlign: 'center', backgroundColor: '#fff', marginBottom: '32px' }}>
-            <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#000', lineHeight: '1.6', fontWeight: 500 }}>
-              Si querés mayor seguridad, hablanos al WhatsApp. Te compartimos la factura y comprobante de venta por ese medio, y luego te enviaremos tu código de envío.
-            </p>
-            <a 
-              href={obtenerLinkWhatsAppTarjetaExito(montoFinalCobrado)}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-block', background: '#000', color: '#fff', textDecoration: 'none', padding: '12px 24px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', border: '1px solid #000' }}
-            >
-              💬 SOLICITAR COMPROBANTE Y FACTURA
-            </a>
-          </div>
-        )}
 
         <button 
           type="button" 
@@ -398,23 +358,14 @@ export const CheckoutForm = () => {
             </span>
           )}
 
-          {/* 🔘 CONTROL INTELIGENTE DE REDIRECCIÓN EN CHECKOUT */}
-          {linkMercadoPago ? (
-            <a 
-              href={linkMercadoPago}
-              style={{ display: 'block', width: '100%', background: '#0056b3', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px', textAlign: 'center', textDecoration: 'none' }}
-            >
-              🚀 PROCEDER AL PAGO SEGURO
-            </a>
-          ) : (
-            <button 
-              type="submit" 
-              disabled={cargandoPasarela}
-              style={{ width: '100%', background: cargandoPasarela ? '#666' : '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
-            >
-              {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
-            </button>
-          )}
+          {/* 🔘 BOTÓN NEGRO UNIFICADO DE PAGO NUBE SEGURO */}
+          <button 
+            type="submit" 
+            disabled={cargandoPasarela}
+            style={{ width: '100%', background: cargandoPasarela ? '#666' : '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
+          >
+            {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'tarjeta' ? 'PAGO NUBE SEGURO' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
+          </button>
         </div>
 
         {/* COLUMNA DERECHA */}
