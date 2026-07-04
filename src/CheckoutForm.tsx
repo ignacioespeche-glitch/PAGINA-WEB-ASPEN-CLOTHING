@@ -22,14 +22,6 @@ export const CheckoutForm = () => {
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
 
-  // Estados locales para la tarjeta
-  const [numeroTarjeta, setNumeroTarjeta] = useState('');
-  const [mesVencimiento, setMesVencimiento] = useState('');
-  const [anioVencimiento, setAnioVencimiento] = useState('');
-  const [cvvTarjeta, setCvvTarjeta] = useState('');
-  const [nombreTarjeta, setNombreTarjeta] = useState('');
-  const [cuotas, setCuotas] = useState('1'); 
-
   // Estado para capturar errores estéticos
   const [errorPasarela, setErrorPasarela] = useState(''); 
 
@@ -43,38 +35,6 @@ export const CheckoutForm = () => {
   const [montoFinalCobrado, setMontoFinalCobrado] = useState(0);
 
   const [cargandoPasarela, setCargandoPasarela] = useState(false);
-
-  const meses = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
-  const anioActual = 2026;
-  const anios = Array.from({ length: 2070 - anioActual + 1 }, (_, i) => String(anioActual + i));
-
-  const handleNumeroTarjetaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/\D/g, ''); 
-    const formateado = input.match(/.{1,4}/g)?.join(' ') || ''; 
-    if (formateado.length <= 19) { 
-      setNumeroTarjeta(formateado);
-    }
-  };
-
-  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/\D/g, ''); 
-    if (input.length <= 3) {
-      setCvvTarjeta(input);
-    }
-  };
-
-  const obtenerMarcaTarjeta = (numero: string) => {
-    const limpio = numero.replace(/\s+/g, '');
-    if (limpio.startsWith('4')) return 'Visa';
-    const prefijoDos = parseInt(limpio.substring(0, 2), 10);
-    const prefijoFour = parseInt(limpio.substring(0, 4), 10);
-    if ((prefijoDos >= 51 && prefijoDos <= 55) || (prefijoFour >= 2221 && prefijoFour <= 2720)) {
-      return 'Mastercard';
-    }
-    return '';
-  };
-
-  const marcaDetectada = obtenerMarcaTarjeta(numeroTarjeta);
 
   let descuentoCalculado = 0;
   if (cuponAplicado) {
@@ -128,13 +88,8 @@ export const CheckoutForm = () => {
       return;
     }
 
-    // 🚀 MODIFICACIÓN QUIRÚRGICA EXCLUSIVA: Si eligen tarjeta, viaja directo sin tocar nada de tu backend
+    // 🚀 CONTROL DE REDIRECCIÓN PASARELA (OPCIÓN B): Si elige Tarjeta, salta directo al checkout externo oficial
     if (metodoPago === 'tarjeta') {
-      if (!numeroTarjeta || !mesVencimiento || !anioVencimiento || !cvvTarjeta || !nombreTarjeta) {
-        setErrorPasarela("POR FAVOR COMPLETA TODOS LOS DATOS DE TU TARJETA.");
-        return;
-      }
-      
       const urlRedireccionPasarela = armarLinkCarritoDirecto(carrito);
       
       localStorage.removeItem('aspen_cart');
@@ -145,7 +100,7 @@ export const CheckoutForm = () => {
       return;
     }
 
-    // CIRCUITO ORIGINAL INTACTO PARA TRANSFERENCIA / EFECTIVO (Descuenta stock en backend)
+    // CIRCUITO ORIGINAL INTACTO: Para Efectivo / Transferencia corre tu lógica tal cual la hiciste
     setCargandoPasarela(true);
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
@@ -182,9 +137,6 @@ export const CheckoutForm = () => {
     const montoSeguro = (montoFinalCobrado || 0).toLocaleString('es-AR');
     const envioSeguro = (costoEnvio || 0).toLocaleString('es-AR');
 
-    const valorCuotaDividido = Math.round(montoFinalCobrado / Number(cuotas));
-    const labelCuotaInformativa = `${cuotas} ${Number(cuotas) === 1 ? 'pago' : 'cuotas'} de $${valorCuotaDividido.toLocaleString('es-AR')},00 sin interés`;
-
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
         <div style={{ alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#f0fdf4', marginBottom: '24px', display: 'inline-flex' }}>
@@ -206,11 +158,6 @@ export const CheckoutForm = () => {
             Comprobante del Pedido
           </h3>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Método de pago:</strong> {metodoPago === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo (Rapipago / Pago Fácil)'}</p>
-          
-          {metodoPago === 'tarjeta' && (
-            <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Plan de pagos seleccionado:</strong> {labelCuotaInformativa}</p>
-          )}
-
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Destino de entrega:</strong> {direccion}, {localidad || 'Mendoza'}</p>
           <p style={{ margin: '6px 0', fontSize: '12px' }}><strong>Costo de Envío:</strong> ${envioSeguro},00</p>
           <p style={{ margin: '12px 0 0 0', fontSize: '13px', fontWeight: 700, paddingTop: '12px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
@@ -287,48 +234,15 @@ export const CheckoutForm = () => {
             </div>
 
             <div style={{ marginTop: '4px' }}>
+              {/* 🔒 CARD DE AVISO ELEGANTE Y SEGURO DE PASARELA EXTERNA */}
               {metodoPago === 'tarjeta' && (
-                <div style={{ border: '1px solid #000', padding: '24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.5px' }}>TARJETA DE CRÉDITO</span>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <span style={{ fontSize: '9px', fontWeight: 700, border: marcaDetectada === 'Visa' ? '2px solid #000' : '1px solid #ccc', padding: '2px 6px', color: '#1A458B', backgroundColor: marcaDetectada === 'Visa' ? '#f0f4ff' : 'transparent' }}>VISA</span>
-                      <span style={{ fontSize: '9px', fontWeight: 700, border: marcaDetectada === 'Mastercard' ? '2px solid #000' : '1px solid #ccc', padding: '2px 6px', color: '#EA3435', backgroundColor: marcaDetectada === 'Mastercard' ? '#fff0f0' : 'transparent' }}>MC</span>
-                    </div>
-                  </div>
-
-                  <input type="text" placeholder="NÚMERO DE TARJETA" value={numeroTarjeta} onChange={handleNumeroTarjetaChange} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', border: '1px solid #000', padding: '6px 10px', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>MES</span>
-                        <select value={mesVencimiento} onChange={(e) => setMesVencimiento(e.target.value)} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '11px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', padding: '4px 0' }}>
-                          <option value="">--</option>
-                          {meses.map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid #eee', paddingLeft: '8px' }}>
-                        <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>AÑO</span>
-                        <select value={anioVencimiento} onChange={(e) => setAnioVencimiento(e.target.value)} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '11px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', padding: '4px 0' }}>
-                          <option value="">----</option>
-                          {anios.map(a => <option key={a} value={a}>{a}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <input type="text" placeholder="CÓDIGO SEG." value={cvvTarjeta} onChange={handleCvvChange} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none' }} />
-                  </div>
-
-                  <input type="text" placeholder="NOMBRE COMO FIGURA EN LA TARJETA" value={nombreTarjeta} onChange={(e) => setNombreTarjeta(e.target.value)} style={{ width: '100%', padding: '14px', border: '1px solid #000', fontSize: '11px', outline: 'none', textTransform: 'uppercase' }} />
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #000', padding: '10px 14px' }}>
-                    <span style={{ fontSize: '8px', color: '#666', fontWeight: 700, letterSpacing: '0.5px' }}>PLAN DE PAGOS</span>
-                    <select value={cuotas} onChange={(e) => setCuotas(e.target.value)} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '11px', fontFamily: 'Inter, sans-serif', cursor: 'pointer', width: '100%', fontWeight: 600 }}>
-                      <option value="1">1 pago de ${montoFinalAMostrar.toLocaleString('es-AR')},00 sin interés</option>
-                      <option value="2">2 cuotas de ${(Math.round(montoFinalAMostrar / 2)).toLocaleString('es-AR')},00 sin interés</option>
-                      <option value="3">3 cuotas de ${(Math.round(montoFinalAMostrar / 3)).toLocaleString('es-AR')},00 sin interés</option>
-                    </select>
-                  </div>
+                <div style={{ border: '1px solid #000', padding: '32px 24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'center', alignItems: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#000', fontWeight: 700, letterSpacing: '0.5px' }}>
+                    🔒 Entorno Certificado y Protegido
+                  </p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#555', lineHeight: '1.6', maxWidth: '450px' }}>
+                    Al confirmar la compra, serás redirigido de forma totalmente encriptada bajo las normas de seguridad de la plataforma oficial de Tiendanube. Allí podrás colocar los datos de tu tarjeta y seleccionar tus cuotas con total tranquilidad y resguardo bancario.
+                  </p>
                 </div>
               )}
 
