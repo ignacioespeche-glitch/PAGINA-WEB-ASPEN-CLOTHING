@@ -204,7 +204,7 @@ console.log("[Aspen Debug] Contenido real del carrito:", itemsProcesables);
       try {
         console.log("[Aspen] Solicitando checkout oficial para variantes:", lineItemsPayload);
         
-        const checkoutResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/checkouts`, {
+        const checkoutResponse = await fetch(`/api-tiendanube/v1/checkouts`, {
           method: 'POST',
           headers: {
             'Authentication': `bearer ${ACCESS_TOKEN}`,
