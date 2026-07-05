@@ -1,7 +1,6 @@
 // src/CheckoutForm.tsx
 import { useState } from 'react';
 import { useCart } from './CartContext';
-// ✂️ Ajuste quirúrgico: se removió 'armarLinkCarritoDirecto' de los imports para eliminar el warning
 import { validarCuponTiendanube, crearOrdenTiendanube, type CuponDescuento } from './services/tiendanube';
 
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
@@ -89,7 +88,6 @@ export const CheckoutForm = () => {
       return;
     }
 
-    // 🚀 UNIFICACIÓN DE FLUJO: Ejecuta el circuito nativo para asegurar stock e impactar orden primero
     setCargandoPasarela(true);
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
@@ -98,14 +96,13 @@ export const CheckoutForm = () => {
       datosCliente, 
       carrito, 
       metodoPago, 
-      cuponAplicado, 
-      undefined
+      cuponAplicado
     );
 
     setCargandoPasarela(false);
 
     if (respuestaApiUrl) {
-      // 🔒 SI ELIGIÓ TARJETA: Redirecciona al instante usando la checkout_url viva devuelta por la API
+      // 🚀 SI ELIGIÓ TARJETA: Salta directo al link de checkout encriptado estilo Dollar Rich Kidz
       if (metodoPago === 'tarjeta') {
         localStorage.removeItem('aspen_cart');
         localStorage.removeItem('aspen_costo_envio');
@@ -115,7 +112,7 @@ export const CheckoutForm = () => {
         return;
       }
 
-      // Manejo offline nativo de WhatsApp intacto para Efectivo y Transferencia
+      // Manejo tradicional offline para efectivo y transferencia por WhatsApp
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
       } else if (metodoPago === 'transferencia') {
@@ -137,7 +134,7 @@ export const CheckoutForm = () => {
 
     return (
       <div style={{ padding: '160px max(4vw, 20px) 80px max(4vw, 20px)', minHeight: '75vh', fontFamily: 'Inter, sans-serif', display: 'block', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#f0fdf4', marginBottom: '24px', display: 'inline-flex' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#f0fdf4', marginBottom: '24px' }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
@@ -148,7 +145,7 @@ export const CheckoutForm = () => {
         </h1>
         
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro system. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
         <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
@@ -238,7 +235,7 @@ export const CheckoutForm = () => {
                     🔒 Entorno Certificado y Protegido
                   </p>
                   <p style={{ margin: 0, fontSize: '11px', color: '#555', lineHeight: '1.6', maxWidth: '450px' }}>
-                    Al confirmar la compra, serás redirigido de forma totalmente encriptada bajo las normas de seguridad de la plataforma oficial de Tiendanube. Allí podrás colocar los datos de tu tarjeta y seleccionar tus cuotas con total tranquilidad y resguardo bancario.
+                    Al confirmar la compra abajo, serás redirigido de forma totalmente encriptada bajo las normas oficiales de Tiendanube. Allí podrás colocar los datos reales de tu tarjeta y seleccionar tus cuotas con total tranquilidad y resguardo bancario.
                   </p>
                 </div>
               )}
