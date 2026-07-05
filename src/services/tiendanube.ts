@@ -225,14 +225,15 @@ export const crearOrdenTiendanube = async (
       note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
 
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/${endpointPath}`, {
+    // 🔒 RUTA ONLINE TARJETA: Le pegamos directo a la API global externa para evitar el 404 del proxy de localhost
+    const response = await fetch(`https://api.tiendanube.com/v1/${STORE_ID}/${endpointPath}`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
       },
-      body: JSON.stringify(orderBody)
+      body: JSON.stringify(orderBody) // Mandamos tu payload original intacto
     });
 
     if (response.ok) {
