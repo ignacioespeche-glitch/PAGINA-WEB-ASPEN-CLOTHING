@@ -180,14 +180,12 @@ export const crearOrdenTiendanube = async (
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
     
+    // 🎯 CAMBIO QUIRÚRGICO EXCLUSIVO: Extrae con precisión el variantId que ya vive en tu consola
     const lineItemsPayload = itemsProcesables.map((item: any) => {
-      const rawVariantId = item.variantId || item.variant_id || (item.variant && item.variant.id);
-      const rawProductId = item.id || item.productId || item.product_id || item.parentId;
-      
-      const variantId = Number(rawVariantId);
-      const productId = Number(rawProductId);
-      const cantidad = Number(item.cantidad || item.quantity || 1);
-      const precioLimpio = parseFloat(item.precio || item.price || "0");
+      const variantId = Number(item.variantId);
+      const productId = Number(item.id);
+      const cantidad = Number(item.cantidad || 1);
+      const precioLimpio = parseFloat(item.precio || "0");
 
       return {
         product_id: isNaN(productId) ? 0 : productId,
