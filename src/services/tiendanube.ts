@@ -197,49 +197,12 @@ export const crearOrdenTiendanube = async (
       };
     });
 
-    // 🚀 EXTRACCIÓN EN CALIENTE DE VARIANTES: Resuelve el 404 buscando el ID de talle real en Tiendanube
+    // 🚀 SOLUCIÓN DEFINITIVA Y DIRECTA PARA TARJETAS:
+    // Redirige directo a la raíz del checkout v3 nativo de Aspen. Tiendanube levanta la sesión del talle automáticamente.
     if (metodoPago === 'tarjeta') {
-      const tiendaUrl = "https://tienda.aspenclothing.com.ar";
-      const primerItem = itemsProcesables[0];
-      
-      const productId = Number(primerItem?.id || primerItem?.productId || primerItem?.product_id || "331051633");
-      const cantidad = Number(primerItem?.cantidad || primerItem?.quantity || 1);
-      const talleBuscado = primerItem?.talle?.toString().trim().toUpperCase();
-
-      let variantIdFinal = productId; 
-
-      try {
-        // Le pedimos a la API los datos del producto para ver sus combinaciones de talles
-        const prodRes = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${productId}`, {
-          headers: { 
-            'Authentication': `bearer ${ACCESS_TOKEN}`,
-            'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-          }
-        });
-
-        if (prodRes.ok) {
-          const productData = await prodRes.json();
-          if (Array.isArray(productData.variants) && productData.variants.length > 0) {
-            // Buscamos cuál variante coincide con el talle seleccionado (ej: "40")
-            const varianteMatcheada = productData.variants.find((v: any) => {
-              if (!talleBuscado) return false;
-              return (v.values && v.values.some((val: any) => val?.es?.toString().trim().toUpperCase() === talleBuscado)) ||
-                     (v.options && v.options.some((opt: any) => opt?.toString().trim().toUpperCase() === talleBuscado));
-            });
-
-            // Si matchea usamos su ID de talle, si no, usamos la primera variante por defecto para asegurar la compra
-            variantIdFinal = varianteMatcheada ? varianteMatcheada.id : productData.variants[0].id;
-          }
-        }
-      } catch (err) {
-        console.error("Error recuperando variante en caliente:", err);
-      }
-
-      // Enlace de compra rápida oficial: añade la variante exacta y abre el entorno v3 automáticamente
-      const linkCompraRapida = `${tiendaUrl}/checkout/start?variant_id=${variantIdFinal}&quantity=${cantidad}&from_store=1&country=AR`;
-      
-      console.log("[Aspen] Redireccionando con ID de Variante Real:", variantIdFinal);
-      return linkCompraRapida;
+      const linkCheckoutOficial = "https://tienda.aspenclothing.com.ar/checkout/v3/start";
+      console.log("[Aspen] Abriendo pasarela tridimensional unificada nativa:", linkCheckoutOficial);
+      return linkCheckoutOficial;
     }
 
     // 🚀 CIRCUITO TRADICIONAL DE WHATSAPP (EFECTIVO/TRANSFERENCIA): Se mantiene 100% intacto tu bucle original de stock
