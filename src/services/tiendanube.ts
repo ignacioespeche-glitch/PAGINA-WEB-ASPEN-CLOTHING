@@ -180,7 +180,7 @@ export const crearOrdenTiendanube = async (
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
     
-    // 🎯 CAMBIO QUIRÚRGICO EXCLUSIVO: Extrae con precisión el variantId que ya vive en tu consola
+    // Extrae con precisión el variantId que ya vive en tu consola
     const lineItemsPayload = itemsProcesables.map((item: any) => {
       const variantId = Number(item.variantId);
       const productId = Number(item.id);
@@ -195,12 +195,52 @@ export const crearOrdenTiendanube = async (
       };
     });
 
-    // 🚀 SOLUCIÓN DEFINITIVA Y DIRECTA PARA TARJETAS:
-    // Redirige directo a la raíz del checkout v3 nativo de Aspen. Tiendanube levanta la sesión del talle automáticamente.
+    // 🚀 SOLUCIÓN DEFINITIVA Y DINÁMICA PARA TARJETAS:
+    // Le pide a la API que genere la sesión oficial encriptada con el talle correcto
     if (metodoPago === 'tarjeta') {
-      const linkCheckoutOficial = "https://tienda.aspenclothing.com.ar/checkout/v3/start";
-      console.log("[Aspen] Abriendo pasarela tridimensional unificada nativa:", linkCheckoutOficial);
-      return linkCheckoutOficial;
+      try {
+        console.log("[Aspen] Solicitando checkout oficial para variantes:", lineItemsPayload);
+        
+        const checkoutResponse = await fetch(`/api-tiendanube/v1/${STORE_ID}/checkouts`, {
+          method: 'POST',
+          headers: {
+            'Authentication': `bearer ${ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+          },
+          body: JSON.stringify({
+            line_items: lineItemsPayload.map((item: any) => ({
+              variant_id: item.variant_id,
+              quantity: item.quantity
+            })),
+            email: datosCliente.email.trim().toLowerCase(),
+            shipping_address: {
+              address: datosCliente.direccion.trim(),
+              city: datosCliente.localidad?.trim() || 'Mendoza',
+              province: 'Mendoza',
+              country: 'AR',
+              zipcode: '5500'
+            }
+          })
+        });
+
+        if (checkoutResponse.ok) {
+          const checkoutData = await checkoutResponse.json();
+          // Retorna la URL dinámica oficial autogenerada por Tiendanube
+          if (checkoutData.checkout_url) {
+            console.log("[Aspen] Redirigiendo a entorno blindado oficial:", checkoutData.checkout_url);
+            return checkoutData.checkout_url;
+          }
+        }
+        
+        // Fallback seguro si la API de checkout experimenta microcortes
+        console.warn("[Aspen] Fallback a pasarela v3 por respuesta incompleta.");
+        return "https://tienda.aspenclothing.com.ar/checkout/v3/start";
+        
+      } catch (checkoutError) {
+        console.error("Error al inicializar sesión segura de Pago Nube:", checkoutError);
+        return "https://tienda.aspenclothing.com.ar/checkout/v3/start";
+      }
     }
 
     // 🚀 CIRCUITO TRADICIONAL DE WHATSAPP (EFECTIVO/TRANSFERENCIA): Se mantiene 100% intacto tu bucle original de stock
