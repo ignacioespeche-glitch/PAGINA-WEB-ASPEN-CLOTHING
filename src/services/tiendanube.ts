@@ -180,8 +180,8 @@ export const crearOrdenTiendanube = async (
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
 
-// AGREGÁ ESTA LÍNEA ACÁ PARA AUTOINSPECCIONAR EL CARRITO:
-console.log("[Aspen Debug] Contenido real del carrito:", itemsProcesables);
+    // AGREGÁ ESTA LÍNEA ACÁ PARA AUTOINSPECCIONAR EL CARRITO:
+    console.log("[Aspen Debug] Contenido real del carrito:", itemsProcesables);
     
     // Extrae con precisión el variantId que ya vive en tu consola
     const lineItemsPayload = itemsProcesables.map((item: any) => {
@@ -198,52 +198,22 @@ console.log("[Aspen Debug] Contenido real del carrito:", itemsProcesables);
       };
     });
 
-    // 🚀 SOLUCIÓN DEFINITIVA Y DINÁMICA PARA TARJETAS:
-    // Le pide a la API que genere la sesión oficial encriptada con el talle correcto
+    // 🚀 SOLUCIÓN DEFINITIVA Y DIRECTA PARA CHECKOUT UNIFICADO (TARJETAS):
+    // Redirige al carrito nativo de Tiendanube inyectando los variant_id reales de forma directa.
+    // Esto fuerza a los servidores de Tiendanube a inicializar la sesión y saltar al checkout v3.
     if (metodoPago === 'tarjeta') {
-      try {
-        console.log("[Aspen] Solicitando checkout oficial para variantes:", lineItemsPayload);
-        
-        const checkoutResponse = await fetch(`/api-tiendanube/v1/checkouts`, {
-          method: 'POST',
-          headers: {
-            'Authentication': `bearer ${ACCESS_TOKEN}`,
-            'Content-Type': 'application/json',
-            'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-          },
-          body: JSON.stringify({
-            line_items: lineItemsPayload.map((item: any) => ({
-              variant_id: item.variant_id,
-              quantity: item.quantity
-            })),
-            email: datosCliente.email.trim().toLowerCase(),
-            shipping_address: {
-              address: datosCliente.direccion.trim(),
-              city: datosCliente.localidad?.trim() || 'Mendoza',
-              province: 'Mendoza',
-              country: 'AR',
-              zipcode: '5500'
-            }
-          })
-        });
+      if (lineItemsPayload.length > 0) {
+        // Armamos la cadena de productos en formato variant_id:quantity (ej: 1546372713:1)
+        const cartItemsPath = lineItemsPayload
+          .map((item: any) => `${item.variant_id}:${item.quantity}`)
+          .join(',');
 
-        if (checkoutResponse.ok) {
-          const checkoutData = await checkoutResponse.json();
-          // Retorna la URL dinámica oficial autogenerada por Tiendanube
-          if (checkoutData.checkout_url) {
-            console.log("[Aspen] Redirigiendo a entorno blindado oficial:", checkoutData.checkout_url);
-            return checkoutData.checkout_url;
-          }
-        }
-        
-        // Fallback seguro si la API de checkout experimenta microcortes
-        console.warn("[Aspen] Fallback a pasarela v3 por respuesta incompleta.");
-        return "https://tienda.aspenclothing.com.ar/checkout/v3/start";
-        
-      } catch (checkoutError) {
-        console.error("Error al inicializar sesión segura de Pago Nube:", checkoutError);
-        return "https://tienda.aspenclothing.com.ar/checkout/v3/start";
+        const urlCheckoutDirecto = `https://tienda.aspenclothing.com.ar/cart/${cartItemsPath}`;
+        console.log("[Aspen] Redirigiendo a checkout nativo autogenerado:", urlCheckoutDirecto);
+        return urlCheckoutDirecto;
       }
+      
+      return "https://tienda.aspenclothing.com.ar/checkout/v3/start";
     }
 
     // 🚀 CIRCUITO TRADICIONAL DE WHATSAPP (EFECTIVO/TRANSFERENCIA): Se mantiene 100% intacto tu bucle original de stock
