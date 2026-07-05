@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true, // Permite las conexiones del túnel de Ngrok
     proxy: {
-      // Intercepta las llamadas locales y las manda a los servidores de Tiendanube (INTACTO, NO SE TOCA)
+      // 🚀 PROXY BASE AMPLILADO: Deja pasar dinámicamente tanto /orders como /checkouts salteando el CORS
       '/api-tiendanube': {
         target: 'https://api.tiendanube.com',
         changeOrigin: true,
