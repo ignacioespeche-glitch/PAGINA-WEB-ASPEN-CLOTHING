@@ -197,23 +197,46 @@ export const crearOrdenTiendanube = async (
       };
     });
 
-    // 🚀 ARMADO DE ENLACE DINÁMICO EXACTO: Si elige tarjeta, estructuramos la URL exacta de checkout con los datos de Aspen
-    // 🚀 ARMADO DE ENLACE DINÁMICO EXACTO
+    // 🚀 ENLACE DINÁMICO POR API: Pega al endpoint oficial /checkouts estructurando el payload correcto
     if (metodoPago === 'tarjeta') {
       const tiendaUrl = "https://tienda.aspenclothing.com.ar";
-      
-      if (lineItemsPayload.length === 0) {
-        return `${tiendaUrl}/checkout/v3/start/`;
+      const primerItem = itemsProcesables[0];
+      const realVariantId = Number(primerItem?.variantId || primerItem?.variant_id || primerItem?.id);
+
+      const checkoutBody = {
+        line_items: [{
+          variant_id: isNaN(realVariantId) ? 0 : realVariantId,
+          quantity: Number(primerItem?.cantidad || primerItem?.quantity || 1)
+        }],
+        email: datosCliente.email.trim().toLowerCase(),
+        shipping_address: {
+          address: datosCliente.direccion.trim(),
+          city: datosCliente.localidad?.trim() || 'Mendoza',
+          province: 'Mendoza',
+          country: 'AR',
+          zipcode: '5500'
+        }
+      };
+
+      const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/checkouts`, {
+        method: 'POST',
+        headers: {
+          'Authentication': `bearer ${ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+        },
+        body: JSON.stringify(checkoutBody)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("[Aspen] ¡Checkout generado con éxito en los servidores de Tiendanube!");
+        return data.checkout_url || data.permalink || `${tiendaUrl}/checkout`;
+      } else {
+        const errorText = await response.text();
+        console.error(`[Error Tiendanube Checkout API]`, errorText);
+        return `${tiendaUrl}/checkout/start?variant_id=${realVariantId}&quantity=1`;
       }
-
-      // EXTRACCIÓN ROBUSTA: Buscamos el variantId real directo del carrito original
-      const primerItemCarrito = itemsProcesables[0];
-      const realVariantId = primerItemCarrito.variantId || primerItemCarrito.variant_id || primerItemCarrito.id;
-
-      const linkEstructuradoNativo = `${tiendaUrl}/checkout/v3/start/${realVariantId}?from_store=1&country=AR`;
-      
-      console.log("[Aspen] Redireccionando al entorno exacto v3 con Variant ID:", realVariantId);
-      return linkEstructuradoNativo;
     }
 
     // 🚀 CIRCUITO TRADICIONAL DE WHATSAPP (EFECTIVO/TRANSFERENCIA): Se mantiene 100% intacto tu bucle original de stock
