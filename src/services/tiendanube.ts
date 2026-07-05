@@ -179,6 +179,9 @@ export const crearOrdenTiendanube = async (
 ): Promise<string | null> => {
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
+
+// AGREGÁ ESTA LÍNEA ACÁ PARA AUTOINSPECCIONAR EL CARRITO:
+console.log("[Aspen Debug] Contenido real del carrito:", itemsProcesables);
     
     // Extrae con precisión el variantId que ya vive en tu consola
     const lineItemsPayload = itemsProcesables.map((item: any) => {
