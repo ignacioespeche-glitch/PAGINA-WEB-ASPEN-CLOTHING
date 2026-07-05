@@ -173,7 +173,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   }
 };
 
-// IMPACTA DIRECTO EN EL PANEL DE VENTAS REALES Y PREVIENE ERRORES DE LLAVES (TOTALMENTE INTACTO)
+// IMPACTA DIRECTO EN EL PANEL DE VENTAS REALES Y RETORNA LA URL DINÁMICA DE PAGO
 export const crearOrdenTiendanube = async (
   datosCliente: any, 
   carrito: any[], 
@@ -219,7 +219,7 @@ export const crearOrdenTiendanube = async (
         country: 'AR',
         zipcode: '5500'
       },
-      payment_status: 'paid',
+      payment_status: metodoPago === 'tarjeta' ? 'pending' : 'paid',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
@@ -237,14 +237,13 @@ export const crearOrdenTiendanube = async (
     });
 
     if (response.ok) {
-      await response.json();
+      const data = await response.json();
       console.log("[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL DE TIENDANUBE!");
 
-      // 🚀 FORZAR DESCUENTO DE STOCK MANUAL DIRECTO EN EL CATÁLOGO
+      // 🚀 FORZAR DESCUENTO DE STOCK MANUAL DIRECTO EN EL CATÁLOGO (TOTALMENTE INTACTO)
       for (const item of lineItemsPayload) {
         if (item.product_id && item.variant_id) {
           try {
-            // 1. Consultamos el stock real que tiene la variante en este segundo
             const varRes = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
               headers: { 
                 'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -255,11 +254,8 @@ export const crearOrdenTiendanube = async (
             if (varRes.ok) {
               const varianteData = await varRes.json();
               const stockActual = varianteData.stock !== null ? Number(varianteData.stock) : 0;
-              
-              // 2. Le restamos la cantidad que acaba de comprar el cliente
               const nuevoStock = Math.max(0, stockActual - item.quantity);
 
-              // 3. Le mandamos el PUT a Tiendanube para actualizar el número en el panel
               await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
                 method: 'PUT',
                 headers: {
@@ -277,7 +273,8 @@ export const crearOrdenTiendanube = async (
         }
       }
 
-      return "SUCCESS";
+      // CAMBIO QUIRÚRGICO: Retorna la URL dinámica real generada por Tiendanube
+      return data.checkout_url || "https://tienda.aspenclothing.com.ar/checkout";
     } else {
       const errorText = await response.text();
       console.error(`[Error Tiendanube API ${response.status}]`, errorText);
@@ -290,7 +287,6 @@ export const crearOrdenTiendanube = async (
   }
 };
 
-// 🚀 FUNCIÓN AISLADA DE REDIRECCIÓN DIRECTA PARA TARJETAS (NATIVO EN ESPAÑOL)
 export const armarLinkCarritoDirecto = (carrito: any[]): string => {
   const tiendaUrl = "https://tienda.aspenclothing.com.ar";
   const itemsProcesables = Array.isArray(carrito) ? carrito : [];
@@ -299,6 +295,5 @@ export const armarLinkCarritoDirecto = (carrito: any[]): string => {
   const primerItem = itemsProcesables[0];
   const rawVariantId = primerItem.variantId || primerItem.variant_id || primerItem.id;
   
-  // Formato oficial de Tiendanube para iniciar el checkout directo salteándose el carrito intermedio
   return `${tiendaUrl}/checkout/start?variant_id=${rawVariantId}&quantity=${primerItem.cantidad || 1}`;
 };

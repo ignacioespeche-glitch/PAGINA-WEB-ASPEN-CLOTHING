@@ -1,7 +1,8 @@
 // src/CheckoutForm.tsx
 import { useState } from 'react';
 import { useCart } from './CartContext';
-import { validarCuponTiendanube, crearOrdenTiendanube, armarLinkCarritoDirecto, type CuponDescuento } from './services/tiendanube';
+// ✂️ Ajuste quirúrgico: se removió 'armarLinkCarritoDirecto' de los imports para eliminar el warning
+import { validarCuponTiendanube, crearOrdenTiendanube, type CuponDescuento } from './services/tiendanube';
 
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
@@ -88,24 +89,12 @@ export const CheckoutForm = () => {
       return;
     }
 
-    // 🚀 CONTROL DE REDIRECCIÓN PASARELA (OPCIÓN B): Si elige Tarjeta, salta directo al checkout externo oficial
-    if (metodoPago === 'tarjeta') {
-      const urlRedireccionPasarela = armarLinkCarritoDirecto(carrito);
-      
-      localStorage.removeItem('aspen_cart');
-      localStorage.removeItem('aspen_costo_envio');
-      if (typeof setCarrito === 'function') setCarrito([]);
-      
-      window.location.href = urlRedireccionPasarela;
-      return;
-    }
-
-    // CIRCUITO ORIGINAL INTACTO: Para Efectivo / Transferencia corre tu lógica tal cual la hiciste
+    // 🚀 UNIFICACIÓN DE FLUJO: Ejecuta el circuito nativo para asegurar stock e impactar orden primero
     setCargandoPasarela(true);
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
-    const respuestaApi = await crearOrdenTiendanube(
+    const respuestaApiUrl = await crearOrdenTiendanube(
       datosCliente, 
       carrito, 
       metodoPago, 
@@ -115,9 +104,18 @@ export const CheckoutForm = () => {
 
     setCargandoPasarela(false);
 
-    if (respuestaApi === "SUCCESS") {
-      console.log("[Aspen] ¡Éxito! Orden impactada en Tiendanube.");
+    if (respuestaApiUrl) {
+      // 🔒 SI ELIGIÓ TARJETA: Redirecciona al instante usando la checkout_url viva devuelta por la API
+      if (metodoPago === 'tarjeta') {
+        localStorage.removeItem('aspen_cart');
+        localStorage.removeItem('aspen_costo_envio');
+        if (typeof setCarrito === 'function') setCarrito([]);
+        
+        window.location.href = respuestaApiUrl;
+        return;
+      }
 
+      // Manejo offline nativo de WhatsApp intacto para Efectivo y Transferencia
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
       } else if (metodoPago === 'transferencia') {
@@ -150,7 +148,7 @@ export const CheckoutForm = () => {
         </h1>
         
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro system. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
         <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
@@ -234,7 +232,6 @@ export const CheckoutForm = () => {
             </div>
 
             <div style={{ marginTop: '4px' }}>
-              {/* 🔒 CARD DE AVISO ELEGANTE Y SEGURO DE PASARELA EXTERNA */}
               {metodoPago === 'tarjeta' && (
                 <div style={{ border: '1px solid #000', padding: '32px 24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'center', alignItems: 'center' }}>
                   <p style={{ margin: 0, fontSize: '12px', color: '#000', fontWeight: 700, letterSpacing: '0.5px' }}>
@@ -272,7 +269,6 @@ export const CheckoutForm = () => {
             </span>
           )}
 
-          {/* 🔘 BOTÓN NEGRO UNIFICADO DE PAGO NUBE SEGURO */}
           <button 
             type="submit" 
             disabled={cargandoPasarela}
