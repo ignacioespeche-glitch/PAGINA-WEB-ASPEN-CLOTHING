@@ -198,6 +198,7 @@ export const crearOrdenTiendanube = async (
     });
 
     // 🚀 ARMADO DE ENLACE DINÁMICO EXACTO: Si elige tarjeta, estructuramos la URL exacta de checkout con los datos de Aspen
+    // 🚀 ARMADO DE ENLACE DINÁMICO EXACTO
     if (metodoPago === 'tarjeta') {
       const tiendaUrl = "https://tienda.aspenclothing.com.ar";
       
@@ -205,11 +206,13 @@ export const crearOrdenTiendanube = async (
         return `${tiendaUrl}/checkout/v3/start/`;
       }
 
-      // Tomamos la variante del primer producto e iniciamos la sesión del checkout v3 de forma directa
-      const primerItem = lineItemsPayload[0];
-      const linkEstructuradoNativo = `${tiendaUrl}/checkout/v3/start/${primerItem.variant_id}?from_store=1&country=AR`;
+      // EXTRACCIÓN ROBUSTA: Buscamos el variantId real directo del carrito original
+      const primerItemCarrito = itemsProcesables[0];
+      const realVariantId = primerItemCarrito.variantId || primerItemCarrito.variant_id || primerItemCarrito.id;
+
+      const linkEstructuradoNativo = `${tiendaUrl}/checkout/v3/start/${realVariantId}?from_store=1&country=AR`;
       
-      console.log("[Aspen] Redireccionando al entorno exacto de checkout:", linkEstructuradoNativo);
+      console.log("[Aspen] Redireccionando al entorno exacto v3 con Variant ID:", realVariantId);
       return linkEstructuradoNativo;
     }
 
