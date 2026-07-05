@@ -197,9 +197,23 @@ export const crearOrdenTiendanube = async (
       };
     });
 
-    // 🚀 CAMBIO QUIRÚRGICO: Si es tarjeta, le pegamos a checkouts para no descontar stock antes de pagar
-    const endpointPath = metodoPago === 'tarjeta' ? 'checkouts' : 'orders';
+    // 🚀 ARMADO DE ENLACE DINÁMICO EXACTO: Si elige tarjeta, estructuramos la URL exacta de checkout con los datos de Aspen
+    if (metodoPago === 'tarjeta') {
+      const tiendaUrl = "https://tienda.aspenclothing.com.ar";
+      
+      if (lineItemsPayload.length === 0) {
+        return `${tiendaUrl}/checkout/v3/start/`;
+      }
 
+      // Tomamos la variante del primer producto e iniciamos la sesión del checkout v3 de forma directa
+      const primerItem = lineItemsPayload[0];
+      const linkEstructuradoNativo = `${tiendaUrl}/checkout/v3/start/${primerItem.variant_id}?from_store=1&country=AR`;
+      
+      console.log("[Aspen] Redireccionando al entorno exacto de checkout:", linkEstructuradoNativo);
+      return linkEstructuradoNativo;
+    }
+
+    // 🚀 CIRCUITO TRADICIONAL DE WHATSAPP (EFECTIVO/TRANSFERENCIA): Se mantiene 100% intacto tu bucle original de stock
     const customerPayload = {
       name: datosCliente.nombre.trim(),
       email: datosCliente.email.trim().toLowerCase(),
@@ -218,38 +232,30 @@ export const crearOrdenTiendanube = async (
         country: 'AR',
         zipcode: '5500'
       },
-      payment_status: metodoPago === 'tarjeta' ? 'pending' : 'paid',
+      payment_status: 'paid',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
       note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
 
-    // 🔒 RUTA ONLINE TARJETA: Le pegamos directo a la API global externa para evitar el 404 del proxy de localhost
-    const response = await fetch(`https://api.tiendanube.com/v1/${STORE_ID}/${endpointPath}`, {
+    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
       },
-      body: JSON.stringify(orderBody) // Mandamos tu payload original intacto
+      body: JSON.stringify(orderBody)
     });
 
     if (response.ok) {
-      const data = await response.json();
+      await response.json();
       console.log("[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL DE TIENDANUBE!");
 
-      // 🚀 SI ES TARJETA: Devolvemos directamente su checkout_url dinámica para pagar allá (Tiendanube descontará stock al aprobar el pago)
-      if (metodoPago === 'tarjeta') {
-        return data.checkout_url || data.permalink || "https://tienda.aspenclothing.com.ar/checkout";
-      }
-
-      // 🚀 FORZAR DESCUENTO DE STOCK MANUAL DIRECTO EN EL CATÁLOGO (Solo efectivo/transferencia)
       for (const item of lineItemsPayload) {
         if (item.product_id && item.variant_id) {
           try {
-            // 1. Consultamos el stock real que tiene la variante en este segundo
             const varRes = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
               headers: { 
                 'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -260,11 +266,8 @@ export const crearOrdenTiendanube = async (
             if (varRes.ok) {
               const varianteData = await varRes.json();
               const stockActual = varianteData.stock !== null ? Number(varianteData.stock) : 0;
-              
-              // 2. Le restamos la cantidad que acaba de comprar el cliente
               const nuevoStock = Math.max(0, stockActual - item.quantity);
 
-              // 3. Le mandamos el PUT a Tiendanube para actualizar el número en el panel
               await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
                 method: 'PUT',
                 headers: {
