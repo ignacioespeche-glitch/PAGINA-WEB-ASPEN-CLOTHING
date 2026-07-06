@@ -1,7 +1,7 @@
 // src/CheckoutForm.tsx
 import { useState } from 'react';
 import { useCart } from './CartContext';
-import { validarCuponTiendanube, crearOrdenTiendanube, type CuponDescuento } from './services/tiendanube';
+import { validarCuponTiendanube, crearOrdenTiendanube, generarLinkMercadoPago, type CuponDescuento } from './services/tiendanube';
 
 type MetodoPago = 'transferencia' | 'tarjeta' | 'efectivo';
 
@@ -92,6 +92,38 @@ export const CheckoutForm = () => {
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
+    // 🚀 DESVÍO DE PASARELA DIRECTO A MERCADO PAGO SI SE SELECCIONÓ TARJETA
+    if (metodoPago === 'tarjeta') {
+      const productosMP = carrito.map((item: any) => {
+        const precioIndividualConRecargo = Math.round((item.precio || 0) * 1.20);
+        return {
+          titulo: item.nombre || "Prenda Aspen",
+          cantidad: Number(item.cantidad || 1),
+          precio: precioIndividualConRecargo
+        };
+      });
+
+      // Guardamos temporalmente los datos del cliente en localStorage para impactar la orden al regresar
+      localStorage.setItem('aspen_cliente_temporal', JSON.stringify(datosCliente));
+      localStorage.setItem('aspen_cupon_temporal', JSON.stringify(cuponAplicado));
+
+      const linkMercadoPago = await generarLinkMercadoPago(productosMP);
+      setCargandoPasarela(false);
+
+      if (linkMercadoPago) {
+        localStorage.removeItem('aspen_cart');
+        localStorage.removeItem('aspen_costo_envio');
+        if (typeof setCarrito === 'function') setCarrito([]);
+        
+        window.location.href = linkMercadoPago; // Redirección directa a la pasarela bancaria
+        return;
+      } else {
+        setErrorPasarela("NO SE PUDO GENERAR EL LINK DE MERCADO PAGO. INTENTE NUEVAMENTE.");
+        return;
+      }
+    }
+
+    // Manejo tradicional offline para efectivo y transferencia por WhatsApp
     const respuestaApiUrl = await crearOrdenTiendanube(
       datosCliente, 
       carrito, 
@@ -102,17 +134,6 @@ export const CheckoutForm = () => {
     setCargandoPasarela(false);
 
     if (respuestaApiUrl) {
-      // 🚀 SI ELIGIÓ TARJETA: Salta directo al link de checkout encriptado estilo Dollar Rich Kidz
-      if (metodoPago === 'tarjeta') {
-        localStorage.removeItem('aspen_cart');
-        localStorage.removeItem('aspen_costo_envio');
-        if (typeof setCarrito === 'function') setCarrito([]);
-        
-        window.location.href = respuestaApiUrl;
-        return;
-      }
-
-      // Manejo tradicional offline para efectivo y transferencia por WhatsApp
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
       } else if (metodoPago === 'transferencia') {
@@ -145,10 +166,10 @@ export const CheckoutForm = () => {
         </h1>
         
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro systema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
-        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '#32px' }}>
+        <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '32px' }}>
           <h3 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', margin: '0 0 16px 0', textTransform: 'uppercase', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
             Comprobante del Pedido
           </h3>
@@ -232,10 +253,10 @@ export const CheckoutForm = () => {
               {metodoPago === 'tarjeta' && (
                 <div style={{ border: '1px solid #000', padding: '32px 24px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'center', alignItems: 'center' }}>
                   <p style={{ margin: 0, fontSize: '12px', color: '#000', fontWeight: 700, letterSpacing: '0.5px' }}>
-                    🔒 Entorno Certificado y Protegido
+                    🔒 Entorno Certificado y Protegido (Mercado Pago)
                   </p>
                   <p style={{ margin: 0, fontSize: '11px', color: '#555', lineHeight: '1.6', maxWidth: '450px' }}>
-                    Al confirmar la compra abajo, serás redirigido de forma totalmente encriptada bajo las normas oficiales de Tiendanube. Allí podrás colocar los datos reales de tu tarjeta y seleccionar tus cuotas con total tranquilidad y resguardo bancario.
+                    Al confirmar la compra abajo, serás redirigido de forma totalmente encriptada bajo las normas de seguridad oficiales de <strong>Mercado Pago</strong>. Allí podrás colocar los datos reales de tu tarjeta y seleccionar  hasta tus <strong>3 cuotas sin interés</strong> con total tranquilidad y resguardo bancario.
                   </p>
                 </div>
               )}
@@ -271,7 +292,7 @@ export const CheckoutForm = () => {
             disabled={cargandoPasarela}
             style={{ width: '100%', background: cargandoPasarela ? '#666' : '#000', color: '#fff', border: 'none', padding: '18px', fontWeight: 700, fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', textTransform: 'uppercase', marginTop: '10px' }}
           >
-            {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'tarjeta' ? 'PAGO NUBE SEGURO' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
+            {cargandoPasarela ? 'VERIFICANDO ENTORNO...' : metodoPago === 'tarjeta' ? 'PAGAR CON MERCADO PAGO' : metodoPago === 'efectivo' ? 'SOLICITAR CUPÓN Y PAGAR' : 'PAGAR AHORA'}
           </button>
         </div>
 
