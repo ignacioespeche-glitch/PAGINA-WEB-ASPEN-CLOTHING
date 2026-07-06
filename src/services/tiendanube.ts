@@ -314,10 +314,10 @@ export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string 
         default_installments: 1
       },
       back_urls: {
-        // Rutas internas de tu web de React para cuando el cliente termine
-        success: "http://localhost:5173/compra-exitosa",
-        failure: "http://localhost:5173/compra-cancelada",
-        pending: "http://localhost:5173/compra-pendiente"
+        // Ponemos tu dominio oficial en vez de localhost
+        success: "https://tienda.aspenclothing.com.ar/compra-exitosa",
+        failure: "https://tienda.aspenclothing.com.ar/compra-cancelada",
+        pending: "https://tienda.aspenclothing.com.ar/compra-pendiente"
       }
     };
 
