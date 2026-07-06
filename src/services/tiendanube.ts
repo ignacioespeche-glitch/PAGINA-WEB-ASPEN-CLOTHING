@@ -217,7 +217,8 @@ export const crearOrdenTiendanube = async (
         country: 'AR',
         zipcode: '5500'
       },
-      payment_status: metodoPago === 'tarjeta' ? 'paid' : 'paid',
+      // 💻 SE PONE EN PENDING (PENDIENTE/AMARILLO) SI ES TARJETA PARA REVISIÓN HASTA QUE SE PAGUE
+      payment_status: metodoPago === 'tarjeta' ? 'pending' : 'paid',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
@@ -272,6 +273,7 @@ export const crearOrdenTiendanube = async (
         }
       }
 
+      // 🚀 RETORNA "SUCCESS" PARA DELEGAR LA REDIRECCIÓN AL FRONTEND SIN TRARE EL LINK VIEJO
       return "SUCCESS";
     } else {
       const errorText = await response.text();
@@ -317,7 +319,6 @@ export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string 
         failure: "http://localhost:5173/compra-cancelada",
         pending: "http://localhost:5173/compra-pendiente"
       }
-      // ⬇️ SACAMOS LA LÍNEA DE AUTO_RETURN PARA QUE MERCADO PAGO NO REBOTE LOCALHOST
     };
 
     const response = await fetch(url, {
