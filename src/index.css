@@ -1197,3 +1197,69 @@ body {
     object-fit: cover !important; /* Corta los bordes sobrantes estéticamente en vez de aplastar el video */
     object-position: center !important; /* Centra el enfoque del video en pantallas chicas */
   }
+
+  /* ==========================================================================
+     4. DETALLE DE PRODUCTO RESPONSIVE (Fotos arriba, información abajo)
+     ========================================================================== */
+  /* Forzamos a que el contenedor principal pase de 2 columnas a 1 sola fila vertical */
+  .producto-detalle-container, 
+  .detalle-wrapper, 
+  .product-detail-container,
+  [class*="detalle-container"] {
+    display: flex !important;
+    flex-direction: column !important; 
+    padding: 15px !important;
+    gap: 25px !important;
+  }
+
+  /* Aseguramos que la columna de fotos ocupe todo el ancho del celular */
+  .columna-fotos, 
+  .imagenes-producto, 
+  .product-images,
+  [class*="columna-foto"],
+  [class*="images"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
+  /* Controlamos el tamaño de las fotos en el detalle para que no sean kilométricas */
+  .columna-fotos img, 
+  .imagenes-producto img,
+  [class*="columna-foto"] img {
+    width: 100% !important;
+    max-height: 55vh !important; /* Evita que la foto sea más grande que la pantalla */
+    object-fit: contain !important; /* Mantiene la prenda perfecta sin deformar */
+    margin-bottom: 15px !important;
+    background-color: #f5f5f5; /* Fondo sutil si la foto es transparente */
+  }
+
+  /* Le damos el 100% del ancho a la columna de textos para que respire */
+  .columna-info, 
+  .info-producto, 
+  .product-info,
+  [class*="columna-info"],
+  [class*="details"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    padding: 0 5px !important;
+  }
+
+  /* Ajustamos los tamaños de los textos para que entren perfectos en el celular */
+  .columna-info h1, 
+  .info-producto h2,
+  [class*="columna-info"] h2 {
+    font-size: 20px !important; /* Tamaño ideal de título para celular */
+    line-height: 1.2 !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* Arreglamos los botones y selectores de talle para que ocupen todo el ancho táctil */
+  .columna-info button,
+  .info-producto select,
+  [class*="columna-info"] button {
+    width: 100% !important;
+    height: 48px !important; /* Tamaño ideal para apretar cómodo con el pulgar */
+  }
