@@ -4,6 +4,9 @@ const STORE_ID = '3180620';
 // Tu token actual intacto, seguro y sin tocar
 const ACCESS_TOKEN = '2ba64b9dcf174e0a62f9536806421c518b112558'; 
 
+// Credencial oficial de Mercado Pago para Aspen (Tarea 1 completada)
+const MERCADO_PAGO_ACCESS_TOKEN = 'APP_USR-3933426876716509-070112-c3edc778860e7f29980d3a67ce2bfc40-389682227';
+
 export interface TiendanubeProducto {
   id: number;
   name: { es: string };
@@ -286,6 +289,68 @@ export const crearOrdenTiendanube = async (
 
   } catch (error) {
     console.error("Error crítico:", error);
+    return null;
+  }
+};
+
+// ==========================================
+// TAREA 2: GENERADOR DE LINKS MERCADO PAGO (CHECKOUT PRO)
+// ==========================================
+interface MPItem {
+  titulo: string;
+  cantidad: number;
+  precio: string | number;
+}
+
+/**
+ * Genera un link de cobro seguro en Mercado Pago con un tope estricto de 3 cuotas.
+ */
+export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string | null> => {
+  try {
+    const url = "https://api.mercadopago.com/checkout/preferences";
+
+    // Formateamos los productos del carrito para que Mercado Pago los entienda sin errores
+    const itemsPayload = carrito.map((item: any) => ({
+      title: item.titulo || item.title || "Producto Aspen",
+      quantity: Number(item.cantidad || 1),
+      unit_price: parseFloat(item.precio || item.unit_price || "0"),
+      currency_id: "ARS"
+    }));
+
+    const bodyData = {
+      items: itemsPayload,
+      payment_methods: {
+        installments: 3, // LIMITA EL CHECKOUT A UN MÁXIMO DE 3 CUOTAS
+        default_installments: 1
+      },
+      back_urls: {
+        // Rutas internas de tu web de React para cuando el cliente termine de tipear
+        success: "http://localhost:5173/compra-exitosa",
+        failure: "http://localhost:5173/compra-cancelada",
+        pending: "http://localhost:5173/compra-pendiente"
+      },
+      auto_return: "approved" // Vuelve solo a tu web si el pago da OK
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify(bodyData)
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.init_point; // Devolvemos la URL segura oficial de Mercado Pago
+    } else {
+      const errorErr = await response.text();
+      console.error("[Mercado Pago API Error]", errorErr);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error crítico generando preferencia de MP:", error);
     return null;
   }
 };
