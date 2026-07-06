@@ -217,8 +217,7 @@ export const crearOrdenTiendanube = async (
         country: 'AR',
         zipcode: '5500'
       },
-      // Si el método es tarjeta viaja como 'pending' (pendiente) para obligar a cobrar en la pasarela nativa
-      payment_status: metodoPago === 'tarjeta' ? 'pending' : 'paid',
+      payment_status: metodoPago === 'tarjeta' ? 'paid' : 'paid',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
@@ -236,13 +235,11 @@ export const crearOrdenTiendanube = async (
     });
 
     if (response.ok) {
-      // Guardamos la respuesta del servidor para extraer el ID y el Token Hash único generado para la venta
       const ordenCreada = await response.json();
       const orderId = ordenCreada.id;
-      const orderToken = ordenCreada.token;
       console.log(`[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL! ID: ${orderId}`);
 
-      // BUCLE DE STOCK ORIGINAL - INTACTO, PRESERVA TU COMPORTAMIENTO NATIVO
+      // BUCLE DE STOCK ORIGINAL - INTACTO Y PRESERVADO
       for (const item of lineItemsPayload) {
         if (item.product_id && item.variant_id) {
           try {
@@ -275,11 +272,6 @@ export const crearOrdenTiendanube = async (
         }
       }
 
-      // Desvío dinámico final según el método de pago (Usa la ruta oficial /success/ con token)
-      if (metodoPago === 'tarjeta') {
-        return `https://tienda.aspenclothing.com.ar/checkout/v3/success/${orderId}/${orderToken}`;
-      }
-
       return "SUCCESS";
     } else {
       const errorText = await response.text();
@@ -302,14 +294,10 @@ interface MPItem {
   precio: string | number;
 }
 
-/**
- * Genera un link de cobro seguro en Mercado Pago con un tope estricto de 3 cuotas.
- */
 export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string | null> => {
   try {
     const url = "https://api.mercadopago.com/checkout/preferences";
 
-    // Formateamos los productos del carrito para que Mercado Pago los entienda sin errores
     const itemsPayload = carrito.map((item: any) => ({
       title: item.titulo || item.title || "Producto Aspen",
       quantity: Number(item.cantidad || 1),
@@ -320,16 +308,15 @@ export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string 
     const bodyData = {
       items: itemsPayload,
       payment_methods: {
-        installments: 3, // LIMITA EL CHECKOUT A UN MÁXIMO DE 3 CUOTAS
+        installments: 3, // TOPE MÁXIMO DE 3 CUOTAS SIN INTERÉS
         default_installments: 1
       },
       back_urls: {
-        // Rutas internas de tu web de React para cuando el cliente termine de tipear
         success: "http://localhost:5173/compra-exitosa",
         failure: "http://localhost:5173/compra-cancelada",
         pending: "http://localhost:5173/compra-pendiente"
       },
-      auto_return: "approved" // Vuelve solo a tu web si el pago da OK
+      auto_return: "approved"
     };
 
     const response = await fetch(url, {
@@ -343,7 +330,7 @@ export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string 
 
     if (response.ok) {
       const data = await response.json();
-      return data.init_point; // Devolvemos la URL segura oficial de Mercado Pago
+      return data.init_point;
     } else {
       const errorErr = await response.text();
       console.error("[Mercado Pago API Error]", errorErr);
