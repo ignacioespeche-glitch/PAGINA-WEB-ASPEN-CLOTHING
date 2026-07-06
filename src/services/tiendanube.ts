@@ -198,9 +198,8 @@ export const crearOrdenTiendanube = async (
       };
     });
 
-    // 🚀 SOLUCIÓN DEFINITIVA Y DIRECTA PARA CHECKOUT UNIFICADO (TARJETAS):
-    // Redirige al carrito nativo de Tiendanube inyectando los variant_id reales de forma directa.
-    // Esto fuerza a los servidores de Tiendanube a inicializar la sesión y saltar al checkout v3.
+    // 🚀 UNICO CAMBIO APLICADO: Redirección directa al endpoint de inicio de checkout
+    // Esto fuerza a Tiendanube a renderizar directamente el formulario blanco de la tarjeta
     if (metodoPago === 'tarjeta') {
       if (lineItemsPayload.length > 0) {
         // Armamos la cadena de productos en formato variant_id:quantity (ej: 1546372713:1)
@@ -208,8 +207,8 @@ export const crearOrdenTiendanube = async (
           .map((item: any) => `${item.variant_id}:${item.quantity}`)
           .join(',');
 
-        const urlCheckoutDirecto = `https://tienda.aspenclothing.com.ar/cart/${cartItemsPath}`;
-        console.log("[Aspen] Redirigiendo a checkout nativo autogenerado:", urlCheckoutDirecto);
+        const urlCheckoutDirecto = `https://tienda.aspenclothing.com.ar/checkout/start/?variants=${cartItemsPath}`;
+        console.log("[Aspen] Redirigiendo directo al panel de pago seguro:", urlCheckoutDirecto);
         return urlCheckoutDirecto;
       }
       
