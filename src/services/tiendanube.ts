@@ -308,15 +308,16 @@ export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string 
     const bodyData = {
       items: itemsPayload,
       payment_methods: {
-        installments: 3, // TOPE MÁXIMO DE 3 CUOTAS SIN INTERÉS
+        installments: 3, // LIMITA EL CHECKOUT A UN MÁXIMO DE 3 CUOTAS
         default_installments: 1
       },
       back_urls: {
+        // Rutas internas de tu web de React para cuando el cliente termine
         success: "http://localhost:5173/compra-exitosa",
         failure: "http://localhost:5173/compra-cancelada",
         pending: "http://localhost:5173/compra-pendiente"
-      },
-      auto_return: "approved"
+      }
+      // ⬇️ SACAMOS LA LÍNEA DE AUTO_RETURN PARA QUE MERCADO PAGO NO REBOTE LOCALHOST
     };
 
     const response = await fetch(url, {
