@@ -1117,43 +1117,66 @@ body {
 }
 
 /* ==========================================================================
-   ESTILOS EXCLUSIVOS PARA CELULARES (Pantallas menores a 768px)
+   ESTILOS EXCLUSIVOS PARA CELULARES (No afecta bajo ningún concepto a la PC)
    ========================================================================== */
 @media (max-width: 768px) {
   
-  /* 1. COMPRIMIR EL ENCABEZADO (Navbar) */
-  /* Ajustá el nombre de la clase de tu contenedor del menú si es distinto */
+  /* 1. COMPRIMIR Y ESTILIZAR LA BARRA SUPERIOR (Navbar / Categorías) */
+  /* Forzamos que el contenedor general use menos relleno */
   .navbar-container, header, nav {
-    padding: 10px 15px !important; /* Achica el margen general */
-    gap: 10px !important;
-  }
-
-  /* Achicar el logo de Aspen */
-  .navbar-container img, .logo {
-    max-height: 20px !important; /* Comprime el tamaño del logo */
-  }
-
-  /* Comprimir las categorías (SUPERIOR, INFERIOR, ACCESORIOS) */
-  .navbar-links, nav a, .categories-menu {
-    font-size: 10px !important; /* Tipografía más chica y estética */
-    letter-spacing: 1px !important;
+    padding: 8px 12px !important;
     gap: 8px !important;
   }
 
-  /* 2. OCULTAR UNA DE LAS DOS FOTOS DEL BANNER */
-  /* Asumiendo que tenés un contenedor para las dos fotos de portada */
-  /* Buscá la clase de la segunda imagen o del contenedor del segundo banner */
-  .banner-container img:nth-child(2), 
-  .home-banner-secondary,
-  .second-image-class {
-    display: none !important; /* Oculta por completo la segunda foto */
+  /* Achicamos el tamaño del logo de Aspen para que no sature */
+  .navbar-container img, .logo, .brand-logo {
+    max-height: 16px !important;
   }
 
-  /* Asegurar que la primera foto ocupe el espacio correcto de forma estética */
-  .banner-container img:nth-child(1),
-  .home-banner-primary {
+  /* Comprimimos la tipografía de las categorías para que queden finas en una sola línea */
+  .navbar-links, nav a, .categories-menu, .nav-item {
+    font-size: 9px !important;
+    letter-spacing: 0.5px !important;
+    gap: 6px !important;
+  }
+
+  /* 2. BANNER HERO: OCULTAR LA SEGUNDA FOTO/VIDEO Y DEJAR SOLO UNA */
+  /* Ocultamos todas las partes derechas de tus 3 bloques hero (Fotos y video) */
+  .hero-right, 
+  .hero-right-inf, 
+  .hero-right-acc {
+    display: none !important;
+  }
+
+  /* Forzamos a que la parte izquierda ocupe el 100% del ancho del celu */
+  .hero-left, 
+  .hero-left-inf, 
+  .hero-left-acc {
     width: 100% !important;
-    height: 60vh !important; /* Ajusta el alto en el celu para que no quede gigante */
-    object-fit: cover !important; /* Evita que la foto se estire o deforme */
+    flex: none !important;
+  }
+
+  /* Reducimos el alto del banner en el celu para que sea estético y no scrollear infinito */
+  .hero-container {
+    display: block !important;
+    height: 50vh !important; /* Ocupa la mitad de la pantalla del celu */
+    min-height: auto !important;
+    margin-bottom: 20px !important;
+  }
+
+  .hero-media img, 
+  .hero-media video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* Mantiene la proporción de la foto sin deformar */
+  }
+
+  /* Ajustamos las frases separadoras para que acompañen el diseño compacto */
+  .frase-separadora {
+    padding: 20px 10px !important;
+  }
+  .titulo-mini {
+    font-size: 16px !important;
+    letter-spacing: 1px !important;
   }
 }
