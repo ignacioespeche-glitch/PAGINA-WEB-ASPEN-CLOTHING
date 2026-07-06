@@ -1180,3 +1180,20 @@ body {
     letter-spacing: 1px !important;
   }
 }
+
+/* 3. AJUSTAR EL VIDEO GIGANTE FINAL AL MISMO TAMANO QUE LAS FOTOS */
+  .video-final-container {
+    height: 50vh !important; /* Le damos exactamente la misma altura que a los banners de arriba */
+    width: 100% !important;
+    overflow: hidden !important;
+    margin-bottom: 20px !important;
+  }
+
+  /* Aseguramos que el video ocupe el espacio sin estirarse ni deformarse */
+  .video-final-container video, 
+  .video-gigante {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* Corta los bordes sobrantes estéticamente en vez de aplastar el video */
+    object-position: center !important; /* Centra el enfoque del video en pantallas chicas */
+  }
