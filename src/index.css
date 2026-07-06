@@ -1115,3 +1115,45 @@ body {
 .btn-finalizar-compra:hover {
   opacity: 0.8;
 }
+
+/* ==========================================================================
+   ESTILOS EXCLUSIVOS PARA CELULARES (Pantallas menores a 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  
+  /* 1. COMPRIMIR EL ENCABEZADO (Navbar) */
+  /* Ajustá el nombre de la clase de tu contenedor del menú si es distinto */
+  .navbar-container, header, nav {
+    padding: 10px 15px !important; /* Achica el margen general */
+    gap: 10px !important;
+  }
+
+  /* Achicar el logo de Aspen */
+  .navbar-container img, .logo {
+    max-height: 20px !important; /* Comprime el tamaño del logo */
+  }
+
+  /* Comprimir las categorías (SUPERIOR, INFERIOR, ACCESORIOS) */
+  .navbar-links, nav a, .categories-menu {
+    font-size: 10px !important; /* Tipografía más chica y estética */
+    letter-spacing: 1px !important;
+    gap: 8px !important;
+  }
+
+  /* 2. OCULTAR UNA DE LAS DOS FOTOS DEL BANNER */
+  /* Asumiendo que tenés un contenedor para las dos fotos de portada */
+  /* Buscá la clase de la segunda imagen o del contenedor del segundo banner */
+  .banner-container img:nth-child(2), 
+  .home-banner-secondary,
+  .second-image-class {
+    display: none !important; /* Oculta por completo la segunda foto */
+  }
+
+  /* Asegurar que la primera foto ocupe el espacio correcto de forma estética */
+  .banner-container img:nth-child(1),
+  .home-banner-primary {
+    width: 100% !important;
+    height: 60vh !important; /* Ajusta el alto en el celu para que no quede gigante */
+    object-fit: cover !important; /* Evita que la foto se estire o deforme */
+  }
+}
