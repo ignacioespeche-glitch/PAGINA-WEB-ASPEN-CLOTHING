@@ -97,16 +97,16 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
 
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
       method: 'POST',
-        headers: {
-          'Authentication': `bearer ${ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-        },
-        body: JSON.stringify({
-          origin: { postal_code: '5500', country: 'AR' },
-          destination: { postal_code: codigoPostal.trim(), country: 'AR' },
-          items: itemsPayload
-        })
+      headers: {
+        'Authentication': `bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+      },
+      body: JSON.stringify({
+        origin: { postal_code: '5500', country: 'AR' },
+        destination: { postal_code: codigoPostal.trim(), country: 'AR' },
+        items: itemsPayload
+      })
     });
 
     if (!response.ok) {
@@ -233,9 +233,10 @@ export const crearOrdenTiendanube = async (
     });
 
     if (response.ok) {
-      // Guardamos la respuesta del servidor para extraer el ID numérico único generado para la venta
+      // Guardamos la respuesta del servidor para extraer el ID y el Token Hash único generado para la venta
       const ordenCreada = await response.json();
       const orderId = ordenCreada.id;
+      const orderToken = ordenCreada.token;
       console.log(`[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL! ID: ${orderId}`);
 
       // BUCLE DE STOCK ORIGINAL - INTACTO, PRESERVA TU COMPORTAMIENTO NATIVO
@@ -271,9 +272,9 @@ export const crearOrdenTiendanube = async (
         }
       }
 
-      // Desvío dinámico final según el método de pago
+      // Desvío dinámico final según el método de pago (Usa la ruta oficial /success/ con token)
       if (metodoPago === 'tarjeta') {
-        return `https://tienda.aspenclothing.com.ar/checkout/v3/start/${orderId}`;
+        return `https://tienda.aspenclothing.com.ar/checkout/v3/success/${orderId}/${orderToken}`;
       }
 
       return "SUCCESS";
