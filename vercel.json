@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api-tiendanube/:path*",
+      "destination": "https://api.tiendanube.com/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
