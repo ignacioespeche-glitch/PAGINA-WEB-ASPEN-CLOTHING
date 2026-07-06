@@ -315,9 +315,9 @@ export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string 
       },
       back_urls: {
         // Ponemos tu dominio oficial en vez de localhost
-        success: "https://tienda.aspenclothing.com.ar/compra-exitosa",
-        failure: "https://tienda.aspenclothing.com.ar/compra-cancelada",
-        pending: "https://tienda.aspenclothing.com.ar/compra-pendiente"
+        success: "https://aspenclothing.com.ar/compra-exitosa",
+      failure: "https://aspenclothing.com.ar/compra-cancelada",
+      pending: "https://aspenclothing.com.ar/compra-pendiente"
       }
     };
 
