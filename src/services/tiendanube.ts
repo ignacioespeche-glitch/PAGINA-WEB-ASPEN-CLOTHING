@@ -97,16 +97,16 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
 
     const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
       method: 'POST',
-      headers: {
-        'Authentication': `bearer ${ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
-      },
-      body: JSON.stringify({
-        origin: { postal_code: '5500', country: 'AR' },
-        destination: { postal_code: codigoPostal.trim(), country: 'AR' },
-        items: itemsPayload
-      })
+        headers: {
+          'Authentication': `bearer ${ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
+        },
+        body: JSON.stringify({
+          origin: { postal_code: '5500', country: 'AR' },
+          destination: { postal_code: codigoPostal.trim(), country: 'AR' },
+          items: itemsPayload
+        })
     });
 
     if (!response.ok) {
@@ -180,10 +180,8 @@ export const crearOrdenTiendanube = async (
   try {
     const itemsProcesables = Array.isArray(carrito) ? carrito : (carrito as any).products || [];
 
-    // AGREGÁ ESTA LÍNEA ACÁ PARA AUTOINSPECCIONAR EL CARRITO:
     console.log("[Aspen Debug] Contenido real del carrito:", itemsProcesables);
     
-    // Extrae con precisión el variantId que ya vive en tu consola
     const lineItemsPayload = itemsProcesables.map((item: any) => {
       const variantId = Number(item.variantId);
       const productId = Number(item.id);
@@ -198,25 +196,6 @@ export const crearOrdenTiendanube = async (
       };
     });
 
-    // 🚀 SOLUCIÓN DEFINITIVA Y DIRECTA PARA CHECKOUT UNIFICADO (TARJETAS):
-    // Redirige al carrito nativo de Tiendanube inyectando los variant_id reales de forma directa.
-    // Esto fuerza a los servidores de Tiendanube a inicializar la sesión y saltar al checkout v3.
-    if (metodoPago === 'tarjeta') {
-      if (lineItemsPayload.length > 0) {
-        // Armamos la cadena de productos en formato variant_id:quantity (ej: 1546372713:1)
-        const cartItemsPath = lineItemsPayload
-          .map((item: any) => `${item.variant_id}:${item.quantity}`)
-          .join(',');
-
-        const urlCheckoutDirecto = `https://tienda.aspenclothing.com.ar/cart/${cartItemsPath}`;
-        console.log("[Aspen] Redirigiendo a checkout nativo autogenerado:", urlCheckoutDirecto);
-        return urlCheckoutDirecto;
-      }
-      
-      return "https://tienda.aspenclothing.com.ar/checkout/v3/start";
-    }
-
-    // 🚀 CIRCUITO TRADICIONAL DE WHATSAPP (EFECTIVO/TRANSFERENCIA): Se mantiene 100% intacto tu bucle original de stock
     const customerPayload = {
       name: datosCliente.nombre.trim(),
       email: datosCliente.email.trim().toLowerCase(),
@@ -235,7 +214,8 @@ export const crearOrdenTiendanube = async (
         country: 'AR',
         zipcode: '5500'
       },
-      payment_status: 'paid',
+      // Si el método es tarjeta viaja como 'pending' (pendiente) para obligar a cobrar en la pasarela nativa
+      payment_status: metodoPago === 'tarjeta' ? 'pending' : 'paid',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
       products: lineItemsPayload,
@@ -253,9 +233,12 @@ export const crearOrdenTiendanube = async (
     });
 
     if (response.ok) {
-      await response.json();
-      console.log("[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL DE TIENDANUBE!");
+      // Guardamos la respuesta del servidor para extraer el ID numérico único generado para la venta
+      const ordenCreada = await response.json();
+      const orderId = ordenCreada.id;
+      console.log(`[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL! ID: ${orderId}`);
 
+      // BUCLE DE STOCK ORIGINAL - INTACTO, PRESERVA TU COMPORTAMIENTO NATIVO
       for (const item of lineItemsPayload) {
         if (item.product_id && item.variant_id) {
           try {
@@ -286,6 +269,11 @@ export const crearOrdenTiendanube = async (
             console.error("Error al descontar stock manualmente:", err);
           }
         }
+      }
+
+      // Desvío dinámico final según el método de pago
+      if (metodoPago === 'tarjeta') {
+        return `https://tienda.aspenclothing.com.ar/checkout/v3/start/${orderId}`;
       }
 
       return "SUCCESS";
