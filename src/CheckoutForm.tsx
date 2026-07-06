@@ -92,38 +92,7 @@ export const CheckoutForm = () => {
     const datosCliente = { email, nombre, telefono, direccion, localidad };
     setMontoFinalCobrado(montoFinalAMostrar);
 
-    // 🚀 DESVÍO DE PASARELA DIRECTO A MERCADO PAGO SI SE SELECCIONÓ TARJETA
-    if (metodoPago === 'tarjeta') {
-      const productosMP = carrito.map((item: any) => {
-        const precioIndividualConRecargo = Math.round((item.precio || 0) * 1.20);
-        return {
-          titulo: item.nombre || "Prenda Aspen",
-          cantidad: Number(item.cantidad || 1),
-          precio: precioIndividualConRecargo
-        };
-      });
-
-      // Guardamos temporalmente los datos del cliente en localStorage para impactar la orden al regresar
-      localStorage.setItem('aspen_cliente_temporal', JSON.stringify(datosCliente));
-      localStorage.setItem('aspen_cupon_temporal', JSON.stringify(cuponAplicado));
-
-      const linkMercadoPago = await generarLinkMercadoPago(productosMP);
-      setCargandoPasarela(false);
-
-      if (linkMercadoPago) {
-        localStorage.removeItem('aspen_cart');
-        localStorage.removeItem('aspen_costo_envio');
-        if (typeof setCarrito === 'function') setCarrito([]);
-        
-        window.location.href = linkMercadoPago; // Redirección directa a la pasarela bancaria
-        return;
-      } else {
-        setErrorPasarela("NO SE PUDO GENERAR EL LINK DE MERCADO PAGO. INTENTE NUEVAMENTE.");
-        return;
-      }
-    }
-
-    // Manejo tradicional offline para efectivo y transferencia por WhatsApp
+    // 1️⃣ SE IMPACTA PRIMERO LA VENTA EN TIENDANUBE Y SE DESCUENTA EL STOCK
     const respuestaApiUrl = await crearOrdenTiendanube(
       datosCliente, 
       carrito, 
@@ -131,9 +100,37 @@ export const CheckoutForm = () => {
       cuponAplicado
     );
 
-    setCargandoPasarela(false);
+    // 2️⃣ SI LA VENTA SE REGISTRÓ CON ÉXITO, SE PROCEDE CON EL DESVÍO CORRESPONDIENTE
+    if (respuestaApiUrl === "SUCCESS") {
+      
+      if (metodoPago === 'tarjeta') {
+        const productosMP = carrito.map((item: any) => {
+          const precioIndividualConRecargo = Math.round((item.precio || 0) * 1.20);
+          return {
+            titulo: item.nombre || "Prenda Aspen",
+            cantidad: Number(item.cantidad || 1),
+            precio: precioIndividualConRecargo
+          };
+        });
 
-    if (respuestaApiUrl) {
+        // Llamamos a tu pasarela de Mercado Pago que quedó intacta y funcionando
+        const linkMercadoPago = await generarLinkMercadoPago(productosMP);
+        setCargandoPasarela(false);
+
+        if (linkMercadoPago) {
+          localStorage.removeItem('aspen_cart');
+          localStorage.removeItem('aspen_costo_envio');
+          if (typeof setCarrito === 'function') setCarrito([]);
+          
+          window.location.href = linkMercadoPago; // Redirección directa a la pasarela bancaria
+          return;
+        } else {
+          setErrorPasarela("LA VENTA SE REGISTRÓ, PERO NO SE PUDO GENERAR EL LINK DE MERCADO PAGO. CONTACTATE CON SOPORTE.");
+          return;
+        }
+      }
+
+      // Manejo tradicional offline para efectivo y transferencia por WhatsApp
       if (metodoPago === 'efectivo') {
         window.open(obtenerLinkWhatsAppEfectivo(), '_blank');
       } else if (metodoPago === 'transferencia') {
@@ -143,8 +140,11 @@ export const CheckoutForm = () => {
       localStorage.removeItem('aspen_cart');
       localStorage.removeItem('aspen_costo_envio');
       setCompraExitosa(true);
+      setCargandoPasarela(false);
       return;
+
     } else {
+      setCargandoPasarela(false);
       setErrorPasarela("NO SE PUDO SINCRONIZAR LA ORDEN CON TIENDANUBE. INTENTE MÁS TARDE.");
     }
   };
@@ -256,7 +256,7 @@ export const CheckoutForm = () => {
                     🔒 Entorno Certificado y Protegido (Mercado Pago)
                   </p>
                   <p style={{ margin: 0, fontSize: '11px', color: '#555', lineHeight: '1.6', maxWidth: '450px' }}>
-                    Al confirmar la compra abajo, serás redirigido de forma totalmente encriptada bajo las normas de seguridad oficiales de <strong>Mercado Pago</strong>. Allí podrás colocar los datos reales de tu tarjeta y seleccionar  hasta tus <strong>3 cuotas sin interés</strong> con total tranquilidad y resguardo bancario.
+                    Al confirmar la compra abajo, serás redirigido de forma totalmente encriptada bajo las normas de seguridad oficiales de <strong>Mercado Pago</strong>. Allí podrás colocar los datos reales de tu tarjeta y seleccionar hasta tus <strong>3 cuotas sin interés</strong> con total tranquilidad y resguardo bancario.
                   </p>
                 </div>
               )}
