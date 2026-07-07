@@ -22,10 +22,21 @@ body {
 }
 
 /* =======================================================
-   HEADER DINÁMICO PREMIUM (TRANSPARENTE A GRIS SUAVE)
+   ANIMACIÓN NATIVA DE SCROLL (MÁXIMA COMPATIBILIDAD)
+   ======================================================= */
+@keyframes cambiarFondoHeader {
+  to {
+    background-color: #b8b4b1 !important; /* El gris sólido exacto de Aspen */
+    height: 75px; /* Se comprime un poquito para dar más facha */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important; /* Despegue sutil */
+  }
+}
+
+/* =======================================================
+   HEADER DINÁMICO NATIVO (TRANSPARENTE A GRIS AUTOMÁTICO)
    ======================================================= */
 .main-header {
-  position: fixed; /* Flota por encima de todo */
+  position: fixed; /* Flota por encima de todo fija */
   top: 0;
   left: 0;
   width: 100%;
@@ -34,21 +45,16 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 0 40px;
-  
-  /* ESTADO INICIAL: Invisible, se mezcla con las fotos */
-  background-color: transparent !important; 
-  box-shadow: none !important;
-  
   z-index: 1000;
-  /* ANIMACIÓN: Efecto de menos a más en 0.4 segundos */
-  transition: background-color 0.4s ease, box-shadow 0.4s ease, height 0.4s ease !important;
-}
 
-/* ESTADO SCROLLED: Se activa solo cuando empezás a bajar */
-.main-header.scrolled {
-  background-color: #b8b4b1 !important; /* Gris sólido exacto de Aspen */
-  height: 75px; /* Se comprime un poquito para dar facha */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important; /* Despegue sutil */
+  /* ESTADO INICIAL (Arriba de todo): Totalmente invisible */
+  background-color: transparent !important;
+  box-shadow: none !important;
+
+  /* EL TRUCO: Vincula la animación directamente al movimiento del scroll de la página */
+  animation: cambiarFondoHeader linear both;
+  animation-timeline: scroll(root);
+  animation-range: 0px 50px; /* Empieza transparente y a los 50px de bajar ya se vuelve gris sólido */
 }
 
 .logo a {
@@ -1072,12 +1078,8 @@ body {
   .main-header {
     height: 60px !important; /* Más petiso en celulares */
     padding: 8px 12px !important;
-    /* En celulares el efecto de scroll también aplica de forma fluida */
-    transition: background-color 0.4s ease, box-shadow 0.4s ease, height 0.4s ease !important;
-  }
-
-  .main-header.scrolled {
-    height: 55px !important;
+    animation: none !important; /* Desactivamos la linea de tiempo de scroll en celu si molesta */
+    background-color: #b8b4b1 !important; /* Celulares lo dejamos fijo por comodidad tactil */
   }
 
   .navbar-container, header, nav {
