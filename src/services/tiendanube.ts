@@ -36,7 +36,8 @@ export interface CuponDescuento {
 
 export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   try {
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/products`, {
+    // 🚀 ACTUALIZACIÓN: Se agrega ?per_page=200 para destrabar el límite por defecto y traer todas las prendas nuevas
+    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/products?per_page=200`, {
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
@@ -316,8 +317,8 @@ export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string 
       back_urls: {
         // Ponemos tu dominio oficial en vez de localhost
         success: "https://aspenclothing.com.ar/compra-exitosa",
-      failure: "https://aspenclothing.com.ar/compra-cancelada",
-      pending: "https://aspenclothing.com.ar/compra-pendiente"
+        failure: "https://aspenclothing.com.ar/compra-cancelada",
+        pending: "https://aspenclothing.com.ar/compra-pendiente"
       }
     };
 
