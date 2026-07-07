@@ -22,10 +22,10 @@ body {
 }
 
 /* =======================================================
-   HEADER TRANSPARENTE Y FLOTANTE PREMIUM
+   HEADER DINÁMICO PREMIUM (TRANSPARENTE A GRIS SUAVE)
    ======================================================= */
 .main-header {
-  position: fixed;
+  position: fixed; /* Flota por encima de todo */
   top: 0;
   left: 0;
   width: 100%;
@@ -34,8 +34,21 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 0 40px;
-  background: transparent;
-  z-index: 100; 
+  
+  /* ESTADO INICIAL: Invisible, se mezcla con las fotos */
+  background-color: transparent !important; 
+  box-shadow: none !important;
+  
+  z-index: 1000;
+  /* ANIMACIÓN: Efecto de menos a más en 0.4 segundos */
+  transition: background-color 0.4s ease, box-shadow 0.4s ease, height 0.4s ease !important;
+}
+
+/* ESTADO SCROLLED: Se activa solo cuando empezás a bajar */
+.main-header.scrolled {
+  background-color: #b8b4b1 !important; /* Gris sólido exacto de Aspen */
+  height: 75px; /* Se comprime un poquito para dar facha */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important; /* Despegue sutil */
 }
 
 .logo a {
@@ -292,7 +305,7 @@ body {
 }
 
 /* =======================================================
-   VIDEO FINAL GIGANTE
+   VIDEO FINAL GIGANTE (PC Escritorio)
    ======================================================= */
 .video-final-container {
   width: 100vw;
@@ -439,9 +452,8 @@ body {
   background-color: #d6d6d6;
 }
 
-
 /* =======================================================
-   PÁGINA DE PRODUCTO DETALLE (PDP)
+   PÁGINA DE PRODUCTO DETALLE (PDP Escritorio)
    ======================================================= */
 .pantalla-carga {
   padding: 150px 0;
@@ -610,182 +622,15 @@ body {
 }
 
 /* =======================================================
-   FOOTER PRINCIPAL NEGRO
-   ======================================================= */
-.main-footer-black {
-  background-color: #000000; 
-  color: #ffffff; 
-  padding: 80px 80px 40px 80px;
-  width: 100vw;
-}
-
-.footer-links-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1.5fr 2.5fr 0.5fr; 
-  gap: 40px;
-  margin-bottom: 60px;
-}
-
-.footer-col h4 {
-  font-size: 13px;
-  font-weight: 500;
-  color: #aaaaaa; 
-  margin-bottom: 25px;
-  letter-spacing: 1px;
-}
-
-.footer-col a, .footer-col p {
-  display: block;
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 11px;
-  margin-bottom: 15px;
-  font-weight: 400;
-  letter-spacing: 1px;
-  transition: opacity 0.2s ease;
-  text-transform: uppercase;
-}
-
-.footer-col a:hover {
-  opacity: 0.6;
-}
-
-.brand-col p {
-  line-height: 1.8;
-  text-transform: none; 
-  color: #cccccc;
-}
-
-.ig-link {
-  font-size: 18px !important;
-}
-
-.medios-de-pago-section {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 50px;
-}
-
-.medios-de-pago-section h4 {
-  font-size: 12px;
-  font-weight: 500;
-  color: #ffffff;
-  letter-spacing: 1px;
-}
-
-.logos-pago {
-  display: flex;
-}
-
-.imagen-bancos {
-  height: 25px; 
-  width: auto;
-  object-fit: contain;
-}
-
-.footer-logo-gigante {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 60px;
-  overflow: hidden;
-}
-
-.footer-logo-img {
-  width: 80%; 
-  max-width: 1300px;
-  height: auto;
-  object-fit: contain;
-  display: block;
-}
-
-.footer-copyright {
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.footer-copyright p {
-  font-size: 9px;
-  color: #888888;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.link-legal {
-  color: #888888;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.link-legal:hover {
-  color: #ffffff; 
-  text-decoration: underline;
-}
-
-/* =======================================================
-   RESPONSIVE PARA CELULARES
-   ======================================================= */
-@media (max-width: 768px) {
-  .hero-container {
-    flex-direction: column;
-  }
-  .hero-media {
-    width: 100%;
-  }
-  .grilla-destacados, .grilla-categoria {
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 10px;
-  }
-  .footer-links-grid {
-    grid-template-columns: 1fr; 
-    gap: 30px;
-  }
-  .medios-de-pago-section {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .footer-logo-img {
-    width: 95%; 
-  }
-  .imagen-bancos {
-    max-width: 100%;
-    height: auto;
-  }
-  .video-final-container {
-    margin-bottom: 80px; 
-  }
-  .producto-detalle-container {
-    flex-direction: column;
-    padding-top: 90px;
-  }
-  .producto-foto-seccion, .producto-info-seccion {
-    width: 100%;
-    padding: 20px;
-  }
-  .controles-compra {
-    flex-direction: column;
-    height: auto;
-  }
-  .btn-agregar-carrito {
-    padding: 15px;
-  }
-}
-/* =======================================================
-   VISTA DE DETALLE DEL PRODUCTO (DISEÑO EXACTO FOTO 2)
+   VISTA DE DETALLE DEL PRODUCTO COMPLEMENTARIA
    ======================================================= */
 .detalle-wrapper {
   width: 100vw;
   min-height: 100vh;
-  padding-top: 130px; /* Le da aire arriba para que el header no lo pise */
+  padding-top: 130px; 
   display: flex;
 }
 
-/* MITAD IZQUIERDA: FOTO (O ESPACIO VACÍO) */
 .detalle-foto-seccion {
   width: 50%;
   display: flex;
@@ -808,7 +653,6 @@ body {
   background-color: transparent;
 }
 
-/* MITAD DERECHA: INFO Y COMPRA */
 .detalle-info-seccion {
   width: 50%;
   padding: 0 100px 60px 40px;
@@ -843,18 +687,8 @@ body {
   margin-bottom: 40px;
 }
 
-/* TALLES CON ESTILO CUADRADO UNIDO */
 .detalle-bloque-talles {
   margin-bottom: 30px;
-}
-
-.talle-label {
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 15px;
 }
 
 .grilla-botones-talle {
@@ -870,7 +704,7 @@ body {
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  margin-right: -1px; /* TRUCO: Hace que los bordes se pisen como en tu foto */
+  margin-right: -1px; 
   transition: background-color 0.2s;
 }
 
@@ -882,10 +716,9 @@ body {
   border-color: #000;
   color: #000;
   font-weight: 800;
-  z-index: 1; /* Para que el borde negro resalte sobre los grises */
+  z-index: 1; 
 }
 
-/* CANTIDAD Y BOTÓN AGREGAR NARANJA */
 .detalle-bloque-accion {
   display: flex;
   gap: 20px;
@@ -918,8 +751,8 @@ body {
 
 .btn-agregar-full {
   flex-grow: 1;
-  background-color: #000000; /* Fondo negro */
-  color: #ffffff; /* Letra blanca */
+  background-color: #000000; 
+  color: #ffffff; 
   border: 1px solid #000000;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
@@ -931,15 +764,10 @@ body {
 }
 
 .btn-agregar-full:hover {
-  background-color: #ffffff; /* Al pasar el mouse se pone blanco */
-  color: #000000; /* Letra negra */
+  background-color: #ffffff; 
+  color: #000000; 
 }
 
-.btn-agregar-full:hover {
-  opacity: 0.8;
-}
-
-/* STOCK Y DESCRIPCIÓN */
 .detalle-stock {
   display: flex;
   align-items: center;
@@ -974,6 +802,7 @@ body {
 .detalle-descripcion-texto li {
   margin-bottom: 5px;
 }
+
 /* =======================================================
    MENÚ LATERAL DEL CARRITO (SIDEBAR)
    ======================================================= */
@@ -993,7 +822,7 @@ body {
   width: 400px;
   max-width: 100vw;
   height: 100vh;
-  background-color: #b8b4b1; /* Mismo gris de Aspen */
+  background-color: #b8b4b1; 
   display: flex;
   flex-direction: column;
   box-shadow: -5px 0 15px rgba(0,0,0,0.5);
@@ -1116,92 +945,220 @@ body {
   opacity: 0.8;
 }
 
+/* =======================================================
+   FOOTER PRINCIPAL NEGRO
+   ======================================================= */
+.main-footer-black {
+  background-color: #000000; 
+  color: #ffffff; 
+  padding: 80px 80px 40px 80px;
+  width: 100vw;
+}
+
+.footer-links-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1.5fr 2.5fr 0.5fr; 
+  gap: 40px;
+  margin-bottom: 60px;
+}
+
+.footer-col h4 {
+  font-size: 13px;
+  font-weight: 500;
+  color: #aaaaaa; 
+  margin-bottom: 25px;
+  letter-spacing: 1px;
+}
+
+.footer-col a, .footer-col p {
+  display: block;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 11px;
+  margin-bottom: 15px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  transition: opacity 0.2s ease;
+  text-transform: uppercase;
+}
+
+.footer-col a:hover {
+  opacity: 0.6;
+}
+
+.brand-col p {
+  line-height: 1.8;
+  text-transform: none; 
+  color: #cccccc;
+}
+
+.ig-link {
+  font-size: 18px !important;
+}
+
+.medios-de-pago-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 50px;
+}
+
+.medios-de-pago-section h4 {
+  font-size: 12px;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.logos-pago {
+  display: flex;
+}
+
+.imagen-bancos {
+  height: 25px; 
+  width: auto;
+  object-fit: contain;
+}
+
+.footer-logo-gigante {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 60px;
+  overflow: hidden;
+}
+
+.footer-logo-img {
+  width: 80%; 
+  max-width: 1300px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.footer-copyright {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-copyright p {
+  font-size: 9px;
+  color: #888888;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.link-legal {
+  color: #888888;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.link-legal:hover {
+  color: #ffffff; 
+  text-decoration: underline;
+}
+
 /* ==========================================================================
-   ESTILOS EXCLUSIVOS PARA CELULARES (No afecta bajo ningún concepto a la PC)
+   RESPONSIVE EXCLUSIVO PARA CELULARES (No afecta el diseño de la PC)
    ========================================================================== */
 @media (max-width: 768px) {
   
-  /* 1. COMPRIMIR Y ESTILIZAR LA BARRA SUPERIOR (Navbar / Categorías) */
-  /* Forzamos que el contenedor general use menos relleno */
+  /* 1. COMPRIMIR Y ESTILIZAR LA BARRA SUPERIOR MOBILE */
+  .main-header {
+    height: 60px !important; /* Más petiso en celulares */
+    padding: 8px 12px !important;
+    /* En celulares el efecto de scroll también aplica de forma fluida */
+    transition: background-color 0.4s ease, box-shadow 0.4s ease, height 0.4s ease !important;
+  }
+
+  .main-header.scrolled {
+    height: 55px !important;
+  }
+
   .navbar-container, header, nav {
     padding: 8px 12px !important;
     gap: 8px !important;
   }
 
-  /* Achicamos el tamaño del logo de Aspen para que no sature */
-  .navbar-container img, .logo, .brand-logo {
+  .navbar-container img, .logo, .brand-logo, .logo img {
     max-height: 16px !important;
+    height: 16px !important;
   }
 
-  /* Comprimimos la tipografía de las categorías para que queden finas en una sola línea */
-  .navbar-links, nav a, .categories-menu, .nav-item {
+  .nav-menu ul {
+    gap: 15px !important;
+  }
+
+  .navbar-links, nav a, .categories-menu, .nav-item, .nav-menu ul li a {
     font-size: 9px !important;
     letter-spacing: 0.5px !important;
     gap: 6px !important;
   }
 
-  /* 2. BANNER HERO: OCULTAR LA SEGUNDA FOTO/VIDEO Y DEJAR SOLO UNA */
-  /* Ocultamos todas las partes derechas de tus 3 bloques hero (Fotos y video) */
+  .nav-icons {
+    gap: 12px !important;
+  }
+
+  .nav-icons .icon {
+    font-size: 9px !important;
+  }
+
+  /* 2. BANNER HERO: COBERTURA COMPLETA CON UNA SOLA FOTO */
+  .hero-container {
+    display: block !important;
+    flex-direction: column;
+    height: 50vh !important; 
+    min-height: auto !important;
+    margin-bottom: 20px !important;
+  }
+
   .hero-right, 
   .hero-right-inf, 
   .hero-right-acc {
     display: none !important;
   }
 
-  /* Forzamos a que la parte izquierda ocupe el 100% del ancho del celu */
   .hero-left, 
   .hero-left-inf, 
   .hero-left-acc {
     width: 100% !important;
+    height: 100% !important;
     flex: none !important;
   }
 
-  /* Reducimos el alto del banner en el celu para que sea estético y no scrollear infinito */
-  .hero-container {
-    display: block !important;
-    height: 50vh !important; /* Ocupa la mitad de la pantalla del celu */
-    min-height: auto !important;
-    margin-bottom: 20px !important;
+  .hero-media {
+    width: 100% !important;
   }
 
   .hero-media img, 
   .hero-media video {
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover !important; /* Mantiene la proporción de la foto sin deformar */
+    object-fit: cover !important; 
   }
 
-  /* Ajustamos las frases separadoras para que acompañen el diseño compacto */
-  .frase-separadora {
-    padding: 20px 10px !important;
-  }
-  .titulo-mini {
-    font-size: 16px !important;
-    letter-spacing: 1px !important;
-  }
-}
-
-/* 3. AJUSTAR EL VIDEO GIGANTE FINAL AL MISMO TAMANO QUE LAS FOTOS */
+  /* 3. COMPRIMIR EL VIDEO GIGANTE FINAL AL MISMO ALTO */
   .video-final-container {
-    height: 50vh !important; /* Le damos exactamente la misma altura que a los banners de arriba */
+    height: 50vh !important; 
     width: 100% !important;
     overflow: hidden !important;
     margin-bottom: 20px !important;
   }
 
-  /* Aseguramos que el video ocupe el espacio sin estirarse ni deformarse */
   .video-final-container video, 
   .video-gigante {
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover !important; /* Corta los bordes sobrantes estéticamente en vez de aplastar el video */
-    object-position: center !important; /* Centra el enfoque del video en pantallas chicas */
+    object-fit: cover !important; 
+    object-position: center !important; 
   }
 
-  /* ==========================================================================
-     4. DETALLE DE PRODUCTO RESPONSIVE (Fotos arriba, información abajo)
-     ========================================================================== */
-  /* Forzamos a que el contenedor principal pase de 2 columnas a 1 sola fila vertical */
+  /* 4. DETALLE DE PRODUCTO RESPONSIVE EN RECTÁNGULO VERTICAL */
   .producto-detalle-container, 
   .detalle-wrapper, 
   .product-detail-container,
@@ -1210,34 +1167,38 @@ body {
     flex-direction: column !important; 
     padding: 15px !important;
     gap: 25px !important;
+    padding-top: 80px !important;
   }
 
-  /* Aseguramos que la columna de fotos ocupe todo el ancho del celular */
   .columna-fotos, 
   .imagenes-producto, 
   .product-images,
+  .producto-foto-seccion,
+  .detalle-foto-seccion,
   [class*="columna-foto"],
   [class*="images"] {
     width: 100% !important;
     max-width: 100% !important;
     flex: none !important;
+    padding: 0 !important;
   }
 
-  /* Controlamos el tamaño de las fotos en el detalle para que no sean kilométricas */
   .columna-fotos img, 
   .imagenes-producto img,
+  .producto-foto-seccion img,
+  .foto-detalle-img,
   [class*="columna-foto"] img {
     width: 100% !important;
-    max-height: 55vh !important; /* Evita que la foto sea más grande que la pantalla */
-    object-fit: contain !important; /* Mantiene la prenda perfecta sin deformar */
+    max-height: 55vh !important; 
+    object-fit: contain !important; 
     margin-bottom: 15px !important;
-    background-color: #f5f5f5; /* Fondo sutil si la foto es transparente */
   }
 
-  /* Le damos el 100% del ancho a la columna de textos para que respire */
   .columna-info, 
   .info-producto, 
   .product-info,
+  .producto-info-seccion,
+  .detalle-info-seccion,
   [class*="columna-info"],
   [class*="details"] {
     width: 100% !important;
@@ -1246,20 +1207,62 @@ body {
     padding: 0 5px !important;
   }
 
-  /* Ajustamos los tamaños de los textos para que entren perfectos en el celular */
   .columna-info h1, 
   .info-producto h2,
+  .producto-titulo,
+  .detalle-titulo,
   [class*="columna-info"] h2 {
-    font-size: 20px !important; /* Tamaño ideal de título para celular */
+    font-size: 20px !important; 
     line-height: 1.2 !important;
     letter-spacing: 0.5px !important;
     margin-bottom: 10px !important;
   }
 
-  /* Arreglamos los botones y selectores de talle para que ocupen todo el ancho táctil */
-  .columna-info button,
-  .info-producto select,
-  [class*="columna-info"] button {
-    width: 100% !important;
-    height: 48px !important; /* Tamaño ideal para apretar cómodo con el pulgar */
+  .controles-compra, .detalle-bloque-accion {
+    flex-direction: column !important;
+    height: auto !important;
+    gap: 15px !important;
   }
+
+  .selector-cantidad, .selector-cantidad-caja {
+    width: 100% !important;
+    height: 48px !important;
+  }
+
+  .btn-agregar-carrito, .btn-agregar-full {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  /* OTROS ELEMENTOS RESPONSIVE */
+  .grilla-destacados, .grilla-categoria {
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px;
+  }
+  .footer-links-grid {
+    grid-template-columns: 1fr; 
+    gap: 30px;
+  }
+  .medios-de-pago-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .footer-logo-img {
+    width: 95%; 
+  }
+  .imagen-bancos {
+    max-width: 100%;
+    height: auto;
+  }
+  .frase-separadora {
+    padding: 20px 10px !important;
+  }
+  .titulo-mini {
+    font-size: 16px !important;
+    letter-spacing: 1px !important;
+  }
+}
