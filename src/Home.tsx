@@ -24,15 +24,15 @@ export const Home = () => {
     const categoryUpper = nombreCategoria.toUpperCase().trim();
     const subcategoryHome = `${categoryUpper} HOME`;
     
-    // Busca TODOS los productos que correspondan tanto a la sección general como a la del Home
+    // 🔥 CAMBIO CLAVE: Filtra TODOS los productos nuevos o viejos que pertenezcan a la categoría general o a la del Home
     const destacados = productos.filter(p => 
       p.categories?.some(cat => {
-        const catName = cat.name?.es?.toUpperCase().trim();
+        const catName = cat.name?.es?.toUpperCase().trim() || '';
         return catName === subcategoryHome || catName === categoryUpper;
       })
     );
 
-    // Toma los primeros 4 encontrados para armar la fila
+    // Mapea y toma los primeros 4 para la fila de la portada
     const items: ProductoGrilla[] = destacados.slice(0, 4).map(p => ({ ...p, esVacio: false }));
     
     while (items.length < 4) {
