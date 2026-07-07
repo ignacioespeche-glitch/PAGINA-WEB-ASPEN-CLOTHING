@@ -5,6 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Aspen Clothing</title>
+    <!-- Fuente Inter Premium -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -13,16 +14,29 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 
+    <!-- Script de Control de Scroll y Navegación para Aspen -->
     <script>
+      // 1. Control del fondo gris del header al bajar
       window.addEventListener('scroll', () => {
         const header = document.querySelector('.main-header');
         if (header) {
-          // Apenas baja 10px (un toquecito de scroll) ya clava el fondo gris
           if (window.scrollY > 10) {
             header.classList.add('scrolled');
           } else {
             header.classList.remove('scrolled');
           }
+        }
+      });
+
+      // 2. Control automático de Scroll To Top al cambiar de sección
+      document.addEventListener('click', (e) => {
+        // Buscamos si el usuario hizo clic en un enlace de navegación, botón o tarjeta de prenda
+        const esEnlace = e.target.closest('a') || e.target.closest('.tarjeta-destacada') || e.target.closest('.tarjeta-categoria') || e.target.closest('.boton-explorar');
+        if (esEnlace) {
+          // Esperamos 80ms cortos a que React renderice la nueva ruta y subimos la pantalla
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+          }, 80);
         }
       });
     </script>
