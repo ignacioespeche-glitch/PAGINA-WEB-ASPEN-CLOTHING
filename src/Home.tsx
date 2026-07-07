@@ -24,7 +24,7 @@ export const Home = () => {
     const categoryUpper = nombreCategoria.toUpperCase().trim();
     const subcategoryHome = `${categoryUpper} HOME`;
     
-    // 🔥 CAMBIO CLAVE: Filtra TODOS los productos nuevos o viejos que pertenezcan a la categoría general o a la del Home
+    // Filtra todos los productos de la categoría
     const destacados = productos.filter(p => 
       p.categories?.some(cat => {
         const catName = cat.name?.es?.toUpperCase().trim() || '';
@@ -32,9 +32,10 @@ export const Home = () => {
       })
     );
 
-    // Mapea y toma los primeros 4 para la fila de la portada
-    const items: ProductoGrilla[] = destacados.slice(0, 4).map(p => ({ ...p, esVacio: false }));
+    // 🔥 ELIMINADO EL LÍMITE: Ahora mapea TODOS los productos encontrados sin cortar en 4
+    const items: ProductoGrilla[] = destacados.map(p => ({ ...p, esVacio: false }));
     
+    // Mantiene un mínimo estético de 4 espacios con "Próximamente" si la categoría está vacía
     while (items.length < 4) {
       items.push({ 
         id: `vacio-${nombreCategoria}-${items.length}`, 
