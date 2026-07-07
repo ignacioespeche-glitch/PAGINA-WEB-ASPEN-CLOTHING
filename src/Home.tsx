@@ -24,15 +24,24 @@ export const Home = () => {
     const categoryUpper = nombreCategoria.toUpperCase().trim();
     const subcategoryHome = `${categoryUpper} HOME`;
     
-    // Filtra los productos de la categoría general o la subcategoría Home
-    const destacados = productos.filter(p => 
+    // 1. Buscamos primero de forma estricta los productos asignados a la subcategoría HOME (ej: SUPERIOR HOME)
+    let destacados = productos.filter(p => 
       p.categories?.some(cat => {
         const catName = cat.name?.es?.toUpperCase().trim() || '';
-        return catName === subcategoryHome || catName === categoryUpper;
+        return catName === subcategoryHome;
       })
     );
 
-    // 🔒 VOLVIÓ EL CANDADO: Toma estrictamente las primeras 4 prendas para congelar la estructura visual
+    // 2. Si no hay suficientes específicos del HOME, rellenamos con los de la categoría general (ej: SUPERIOR)
+    if (destacados.length < 4) {
+      const deRespaldo = productos.filter(p => 
+        p.categories?.some(cat => cat.name?.es?.toUpperCase().trim() === categoryUpper) &&
+        !destacados.some(d => d.id === p.id) // Evita duplicar si ya estaba
+      );
+      destacados = [...destacados, ...deRespaldo];
+    }
+
+    // 🔒 VALVIÓ EL CANDADO: Toma estrictamente las primeras 4 prendas para congelar la estructura visual
     const items: ProductoGrilla[] = destacados.slice(0, 4).map(p => ({ ...p, esVacio: false }));
     
     // Mantiene los espacios vacíos estéticos si hay menos de 4 artículos
