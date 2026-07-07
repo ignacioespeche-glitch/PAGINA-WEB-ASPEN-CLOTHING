@@ -22,10 +22,10 @@ body {
 }
 
 /* =======================================================
-   HEADER DINÁMICO (TRANSPARENTE A GRIS AL SCROLLEAR)
+   HEADER DINÁMICO (TRANSPARENTE ARRIBA -> GRIS AL SCROLLEAR)
    ======================================================= */
 .main-header {
-  position: fixed; /* Flota permanentemente arriba */
+  position: fixed; /* Flota de manera fija sobre el contenido */
   top: 0;
   left: 0;
   width: 100%;
@@ -36,18 +36,18 @@ body {
   padding: 0 40px;
   z-index: 1000;
 
-  /* ESTADO INICIAL (Arriba de todo): Completamente invisible */
+  /* APENAS ENTRAS (FOTO 1): Totalmente transparente y sin sombras */
   background-color: transparent !important;
   box-shadow: none !important;
 
-  /* Transición fluida de 0.4 segundos */
-  transition: background-color 0.4s ease, box-shadow 0.4s ease, height 0.4s ease !important;
+  /* Transición fluida de 0.3 segundos para que vaya de menos a más */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, height 0.3s ease !important;
 }
 
-/* ESTADO EN SCROLL: Se activa automáticamente mediante el script de index.html */
+/* UN POQUITO MÁS ABAJO (FOTO 2): Se activa con la clase scrolled de JavaScript */
 .main-header.scrolled {
-  background-color: #b8b4b1 !important; /* El gris sólido de Aspen */
-  height: 75px; /* Se comprime un poco dando facha de marca premium */
+  background-color: #b8b4b1 !important; /* El color gris de fondo de la web */
+  height: 75px; /* Se comprime sutilmente para dar aspecto estilizado */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important; /* Despegue sutil */
 }
 
@@ -1072,7 +1072,7 @@ body {
   .main-header {
     height: 60px !important; 
     padding: 8px 12px !important;
-    background-color: #b8b4b1 !important; /* Celulares queda sólido fijo por usabilidad */
+    background-color: #b8b4b1 !important; /* Celulares queda sólido fijo siempre */
   }
 
   .navbar-container, header, nav {
