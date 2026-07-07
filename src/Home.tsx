@@ -21,19 +21,18 @@ export const Home = () => {
   }, []);
 
   const obtenerGrillaPorCategoria = (nombreCategoria: string): ProductoGrilla[] => {
-    const categoriaUpper = nombreCategoria.toUpperCase().trim();
-    const subcategoriaHome = `${categoriaUpper} HOME`;
+    const categoryUpper = nombreCategoria.toUpperCase().trim();
+    const subcategoryHome = `${categoryUpper} HOME`;
     
-    let destacados = productos.filter(p => 
-      p.categories?.some(cat => cat.name?.es?.toUpperCase().trim() === subcategoriaHome)
+    // Busca TODOS los productos que correspondan tanto a la sección general como a la del Home
+    const destacados = productos.filter(p => 
+      p.categories?.some(cat => {
+        const catName = cat.name?.es?.toUpperCase().trim();
+        return catName === subcategoryHome || catName === categoryUpper;
+      })
     );
 
-    if (destacados.length === 0) {
-      destacados = productos.filter(p => 
-        p.categories?.some(cat => cat.name?.es?.toUpperCase().trim() === categoriaUpper)
-      );
-    }
-
+    // Toma los primeros 4 encontrados para armar la fila
     const items: ProductoGrilla[] = destacados.slice(0, 4).map(p => ({ ...p, esVacio: false }));
     
     while (items.length < 4) {
