@@ -24,7 +24,7 @@ export const Home = () => {
     const categoryUpper = nombreCategoria.toUpperCase().trim();
     const subcategoryHome = `${categoryUpper} HOME`;
     
-    // Filtra todos los productos de la categoría
+    // Filtra los productos de la categoría general o la subcategoría Home
     const destacados = productos.filter(p => 
       p.categories?.some(cat => {
         const catName = cat.name?.es?.toUpperCase().trim() || '';
@@ -32,10 +32,10 @@ export const Home = () => {
       })
     );
 
-    // 🔥 ELIMINADO EL LÍMITE: Ahora mapea TODOS los productos encontrados sin cortar en 4
-    const items: ProductoGrilla[] = destacados.map(p => ({ ...p, esVacio: false }));
+    // 🔒 VOLVIÓ EL CANDADO: Toma estrictamente las primeras 4 prendas para congelar la estructura visual
+    const items: ProductoGrilla[] = destacados.slice(0, 4).map(p => ({ ...p, esVacio: false }));
     
-    // Mantiene un mínimo estético de 4 espacios con "Próximamente" si la categoría está vacía
+    // Mantiene los espacios vacíos estéticos si hay menos de 4 artículos
     while (items.length < 4) {
       items.push({ 
         id: `vacio-${nombreCategoria}-${items.length}`, 
