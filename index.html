@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="es">
   <head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PVTXMKFB');</script>
+    <!-- End Google Tag Manager -->
+
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,7 +24,7 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-0BW5VBW6E8', { send_page_view: true }); // Envía la visita inicial
+      gtag('config', 'G-0BW5VBW6E8', { send_page_view: true });
     </script>
 
     <!-- Meta Pixel Code -->
@@ -38,6 +46,11 @@
     <!-- End Meta Pixel Code -->
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PVTXMKFB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 
@@ -59,12 +72,9 @@
       document.addEventListener('click', (e) => {
         const esEnlace = e.target.closest('a') || e.target.closest('.tarjeta-destacada') || e.target.closest('.tarjeta-categoria') || e.target.closest('.boton-explorar');
         if (esEnlace) {
-          // Esperamos cortos 80ms a que React cambie la URL internamente
           setTimeout(() => {
-            // Sube la pantalla de inmediato
             window.scrollTo({ top: 0, behavior: 'instant' });
             
-            // 🔥 SOLUCIÓN REACT: Forzamos el reporte manual a Google Analytics con la nueva ruta cargada
             if (typeof gtag === 'function') {
               gtag('event', 'page_view', {
                 page_path: window.location.pathname + window.location.search,
