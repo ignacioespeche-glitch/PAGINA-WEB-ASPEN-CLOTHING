@@ -71,7 +71,6 @@ function AppContent() {
       <HeaderNav busqueda={busqueda} setBusqueda={setBusqueda} setIsCheckoutOpen={setIsCheckoutOpen} />
       
       {isCheckoutOpen ? (
-        // CORRECCIÓN: Se remueve la prop onCancelar que ya no recibe el componente
         <CheckoutForm />
       ) : (
         <main>
@@ -87,6 +86,19 @@ function AppContent() {
       )}
       
       <Footer />
+
+      {/* 🟢 BOTÓN FLOTANTE DE WHATSAPP OFICIAL PARA ASPEN */}
+      <a 
+        href="https://wa.me/5492612515727?text=Hola%20Aspen!%20Te%20hago%20una%20consulta%20por%20una%20prenda." 
+        className="whatsapp-flotante"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Contacto por WhatsApp"
+      >
+        <svg className="whatsapp-icono-svg" viewBox="0 0 24 24">
+          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.457L0 24zm6.59-4.046c1.66.986 3.288 1.479 4.884 1.48 5.332 0 9.671-4.33 9.675-9.654.002-2.58-1.001-5.005-2.825-6.83C16.5 3.125 14.089 2.121 11.51 2.121 6.22 2.121 1.926 6.405 1.922 11.693c-.001 1.708.468 3.376 1.357 4.864l-.991 3.62 3.73-.978l.029.014z"/>
+        </svg>
+      </a>
     </BrowserRouter>
   );
 }

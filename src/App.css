@@ -910,3 +910,50 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+
+/* ==========================================================
+   🟢 BOTÓN FLOTANTE DE WHATSAPP (ASPEN MINIMAL)
+   ========================================================== */
+.whatsapp-flotante {
+  position: fixed !important;
+  bottom: 25px !important;
+  right: 25px !important;
+  width: 55px !important;
+  height: 55px !important;
+  background-color: #25d366 !important;
+  color: #ffffff !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  z-index: 999999 !important; /* Se asegura de flotar por sobre las fotos fijas y layouts */
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+  text-decoration: none !important;
+}
+
+.whatsapp-flotante:hover {
+  transform: scale(1.08) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.whatsapp-icono-svg {
+  width: 30px !important;
+  height: 30px !important;
+  fill: currentColor !important;
+}
+
+@media (max-width: 480px) {
+  .whatsapp-flotante {
+    bottom: 20px !important;
+    right: 20px !important;
+    width: 50px !important;
+    height: 50px !important;
+  }
+  .whatsapp-icono-svg {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
