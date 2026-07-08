@@ -10,6 +10,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BW5VBW6E8"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-0BW5VBW6E8', { send_page_view: true }); // Envía la visita inicial
+    </script>
+
     <!-- Meta Pixel Code -->
     <script>
       !function(f,b,e,v,n,t,s)
@@ -46,14 +55,22 @@
         }
       });
 
-      // 2. Control automático de Scroll To Top al cambiar de sección
+      // 2. Control automático de Scroll To Top y disparo de eventos Analytics al cambiar de sección
       document.addEventListener('click', (e) => {
-        // Buscamos si el usuario hizo clic en un enlace de navegación, botón o tarjeta de prenda
         const esEnlace = e.target.closest('a') || e.target.closest('.tarjeta-destacada') || e.target.closest('.tarjeta-categoria') || e.target.closest('.boton-explorar');
         if (esEnlace) {
-          // Esperamos 80ms cortos a que React renderice la nueva ruta y subimos la pantalla
+          // Esperamos cortos 80ms a que React cambie la URL internamente
           setTimeout(() => {
+            // Sube la pantalla de inmediato
             window.scrollTo({ top: 0, behavior: 'instant' });
+            
+            // 🔥 SOLUCIÓN REACT: Forzamos el reporte manual a Google Analytics con la nueva ruta cargada
+            if (typeof gtag === 'function') {
+              gtag('event', 'page_view', {
+                page_path: window.location.pathname + window.location.search,
+                page_title: document.title
+              });
+            }
           }, 80);
         }
       });
