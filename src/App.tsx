@@ -38,22 +38,58 @@ const HeaderNav = ({ busqueda, setBusqueda, setIsCheckoutOpen }: any) => {
           <li><Link to="/accesorios" onClick={() => setIsCheckoutOpen(false)}>ACCESORIOS</Link></li>
         </ul>
       </nav>
-      <div className="nav-icons">
-        <input 
-          type="text" 
-          className="buscador-input" 
-          placeholder="SEARCH" 
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          onKeyDown={handleBuscar} 
-        />
+      <div className="nav-icons" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
         
+        {/* CONTAINER DE BÚSQUEDA CON LUPITA */}
+        <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '2px' }}>
+          <svg 
+            width="14" 
+            height="14" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="#000" 
+            strokeWidth="2.5" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            style={{ marginRight: '6px' }}
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input 
+            type="text" 
+            className="buscador-input" 
+            placeholder="BUSCAR..." 
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            onKeyDown={handleBuscar} 
+            style={{ border: 'none', background: 'none', outline: 'none', fontFamily: 'Inter', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', width: '90px', textTransform: 'uppercase' }}
+          />
+        </div>
+        
+        {/* BOTÓN DE CARRITO CON LOGO */}
         <button 
           className="icon"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: '#000', letterSpacing: '1px' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}
           onClick={() => setIsCartOpen(true)}
         >
-          BAG ({totalBolsaArticulos})
+          <svg 
+            width="18" 
+            height="18" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="#000" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span style={{ fontFamily: 'Inter', fontSize: '12px', fontWeight: 700, color: '#000' }}>
+            ({totalBolsaArticulos})
+          </span>
         </button>
       </div>
     </header>
