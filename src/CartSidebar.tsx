@@ -118,6 +118,20 @@ export const CartSidebar = ({ onIniciarCheckout }: CartSidebarProps) => {
       setMensajeErrorEnvio('DEBÉS CALCULAR EL ENVÍO ANTES DE INICIAR LA COMPRA.');
       return;
     }
+
+    // 🔥 EVENTO DE META ADS FIX: Disparar evento InitiateCheckout con valor numérico puro
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'InitiateCheckout', {
+        value: Number(totalPrecio + costoEnvio),
+        currency: 'ARS',
+        content_type: 'product',
+        contents: carrito.map((item: any) => ({
+          id: item.id,
+          quantity: item.cantidad
+        }))
+      });
+    }
+
     setIsCartOpen(false); 
     onIniciarCheckout();   
   };

@@ -102,6 +102,19 @@ export const CheckoutForm = () => {
 
     // 2️⃣ SI LA VENTA SE REGISTRÓ CON ÉXITO, SE PROCEDE CON EL DESVÍO CORRESPONDIENTE
     if (respuestaApiUrl === "SUCCESS") {
+
+      // 🔥 EVENTO DE META ADS FIX: Disparar evento Purchase con valor numérico puro sin símbolos ni strings
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'Purchase', {
+          value: Number(montoFinalAMostrar),
+          currency: 'ARS',
+          content_type: 'product',
+          contents: carrito.map((item: any) => ({
+            id: item.id,
+            quantity: item.cantidad
+          }))
+        });
+      }
       
       if (metodoPago === 'tarjeta') {
         const productosMP = carrito.map((item: any) => {
@@ -166,7 +179,7 @@ export const CheckoutForm = () => {
         </h1>
         
         <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro systema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
+          Hola <strong>{nombre.toUpperCase()}</strong>, procesamos tu solicitud con éxito. Tu orden ya impactó en nuestro sistema. En breve te enviaremos la confirmación de facturación a <span>{email}</span>.
         </p>
 
         <div style={{ border: '1px solid #000', padding: '24px', textAlign: 'left', backgroundColor: '#fafafa', marginBottom: '32px' }}>
