@@ -12,6 +12,7 @@ export const ProductoDetalle = () => {
   const [producto, setProducto] = useState<TiendanubeProducto | null>(null);
   const [loading, setLoading] = useState(true);
   
+  const [colorElegido, setColorElegido] = useState('');
   const [talleElegido, setTalleElegido] = useState('');
   const [cantidad, setCantidad] = useState(1);
 
@@ -23,30 +24,48 @@ export const ProductoDetalle = () => {
     return true;
   };
 
-  const obtenerTalleDeVariante = (variant: any): string | null => {
-    if (!variant.options || variant.options.length === 0) return null;
-    
+  const parsearOpcionesVariante = (variant: any): { talle: string; color: string } => {
+    if (!variant.options || variant.options.length === 0) {
+      return { talle: 'Único', color: '' };
+    }
+
     if (variant.options.length === 1) {
-      return variant.options[0] ? variant.options[0].trim().toUpperCase() : null;
+      const val = variant.options[0]?.trim().toUpperCase() || 'ÚNICO';
+      const esTalleComun = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'ÚNICO', 'UNICO'].includes(val) || !isNaN(Number(val));
+      return esTalleComun ? { talle: val, color: '' } : { talle: 'ÚNICO', color: val };
     }
 
     const op1 = variant.options[0]?.trim().toUpperCase() || '';
     const op2 = variant.options[1]?.trim().toUpperCase() || '';
 
-    const palabrasDeColor = ['NEGRO', 'BLANCO', 'GRIS', 'WHITE', 'BLACK', 'GREY', 'CHEETAH', 'MOCCA', 'BEIGE', 'MARRON', 'BLUE', 'AZUL'];
-    
-    if (!isNaN(Number(op1)) || palabrasDeColor.includes(op2)) {
-      return op1;
+    const esTalleOp1 = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'ÚNICO', 'UNICO'].includes(op1) || !isNaN(Number(op1));
+
+    if (esTalleOp1) {
+      return { talle: op1, color: op2 };
+    } else {
+      return { talle: op2, color: op1 };
     }
-    
-    return op2 || op1;
   };
 
-  const obtenerTallesDeProducto = (prod: TiendanubeProducto): string[] => {
+  const obtenerColoresDeProducto = (prod: TiendanubeProducto): string[] => {
+    if (!prod.variants || prod.variants.length === 0) return [];
+    
+    const colores = prod.variants
+      .map(v => parsearOpcionesVariante(v).color)
+      .filter((c): c is string => Boolean(c) && c !== '');
+
+    return Array.from(new Set(colores));
+  };
+
+  const obtenerTallesDeProductoPorColor = (prod: TiendanubeProducto, colorSel: string): string[] => {
     if (!prod.variants || prod.variants.length === 0) return ['Único'];
     
-    const listaTalles = prod.variants
-      .map(v => obtenerTalleDeVariante(v))
+    const variantesFiltradas = colorSel 
+      ? prod.variants.filter(v => parsearOpcionesVariante(v).color === colorSel)
+      : prod.variants;
+
+    const listaTalles = variantesFiltradas
+      .map(v => parsearOpcionesVariante(v).talle)
       .filter((t): t is string => Boolean(t) && t !== '');
 
     if (listaTalles.length > 0) {
@@ -65,12 +84,18 @@ export const ProductoDetalle = () => {
         
         if (productoEncontrado) {
           setProducto(productoEncontrado);
-          const talles = obtenerTallesDeProducto(productoEncontrado);
+          
+          const colores = obtenerColoresDeProducto(productoEncontrado);
+          const primerColor = colores.length > 0 ? colores[0] : '';
+          setColorElegido(primerColor);
+
+          const talles = obtenerTallesDeProductoPorColor(productoEncontrado, primerColor);
           
           const primerTalleConStock = talles.find(t => {
             const v = productoEncontrado.variants?.find(variant => {
-              const talleVar = obtenerTalleDeVariante(variant);
-              return talleVar === t.toUpperCase();
+              const { talle, color } = parsearOpcionesVariante(variant);
+              const coincideColor = primerColor ? color === primerColor : true;
+              return talle === t.toUpperCase() && coincideColor;
             });
             return v ? (v.stock ?? 0) > 0 : false;
           });
@@ -109,11 +134,13 @@ export const ProductoDetalle = () => {
   if (loading) return <div className="pantalla-mensaje">Cargando prenda...</div>;
   if (!producto) return <div className="pantalla-mensaje">Producto no encontrado.</div>;
 
-  const tallesDisponibles = obtenerTallesDeProducto(producto);
+  const coloresDisponibles = obtenerColoresDeProducto(producto);
+  const tallesDisponibles = obtenerTallesDeProductoPorColor(producto, colorElegido);
 
   const varianteReal = producto.variants?.find(v => {
-    const talleVar = obtenerTalleDeVariante(v);
-    return talleVar === talleElegido.trim().toUpperCase();
+    const { talle, color } = parsearOpcionesVariante(v);
+    const coincideColor = colorElegido ? color === colorElegido : true;
+    return talle === talleElegido.trim().toUpperCase() && coincideColor;
   }) || producto.variants?.[0];
 
   const priceString = varianteReal?.price || '0';
@@ -125,17 +152,36 @@ export const ProductoDetalle = () => {
   const esPrendaForzada = requiereTallesCompletos(producto.name?.es || '') && (!producto.variants || producto.variants.length <= 1);
   const stockMostrar = varianteReal && typeof varianteReal.stock === 'number' ? varianteReal.stock : 0;
 
+  const talleTextoCompleto = colorElegido ? `${talleElegido} / ${colorElegido}` : talleElegido;
+
   const yaAgregadoAlCarrito = carrito?.some(item => item.id === producto.id) ?? false;
 
-  const itemExistenteEnCarrito = carrito.find(item => item.id === producto.id && item.talle === talleElegido);
+  const itemExistenteEnCarrito = carrito.find(item => item.id === producto.id && item.talle === talleTextoCompleto);
   const cantidadYaAgregada = itemExistenteEnCarrito ? itemExistenteEnCarrito.cantidad : 0;
   const stockRestanteDisponible = Math.max(0, stockMostrar - cantidadYaAgregada);
+
+  const handleCambiarColor = (nuevoColor: string) => {
+    setColorElegido(nuevoColor);
+    const nuevosTalles = obtenerTallesDeProductoPorColor(producto, nuevoColor);
+    
+    const talleConStock = nuevosTalles.find(t => {
+      const v = producto.variants?.find(variant => {
+        const { talle, color } = parsearOpcionesVariante(variant);
+        return talle === t.toUpperCase() && color === nuevoColor;
+      });
+      return v ? (v.stock ?? 0) > 0 : false;
+    }) || nuevosTalles[0] || '';
+
+    setTalleElegido(talleConStock);
+    setCantidad(1);
+  };
 
   const handleCambiarTalle = (nuevoTalle: string) => {
     setTalleElegido(nuevoTalle);
     const nuevaVariante = producto.variants?.find(v => {
-      const talleVar = obtenerTalleDeVariante(v);
-      return talleVar === nuevoTalle.trim().toUpperCase();
+      const { talle, color } = parsearOpcionesVariante(v);
+      const coincideColor = colorElegido ? color === colorElegido : true;
+      return talle === nuevoTalle.trim().toUpperCase() && coincideColor;
     });
     const nuevoStock = nuevaVariante?.stock === 0 ? 0 : (esPrendaForzada ? 5 : (nuevaVariante?.stock ?? 0));
     
@@ -152,7 +198,7 @@ export const ProductoDetalle = () => {
       variantId: varianteReal ? varianteReal.id : 0, 
       nombre: producto.name?.es || 'ASPEN ITEM',
       precio: precioNumerico,
-      talle: talleElegido,
+      talle: talleTextoCompleto,
       cantidad: cantidad,
       imagen: producto.images && producto.images.length > 0 ? producto.images[0].src : ''
     }, stockMostrar);
@@ -198,13 +244,42 @@ export const ProductoDetalle = () => {
           </span>
         </div>
 
+        {/* BLOQUE SELECTOR DE COLOR (Si existen varios colores) */}
+        {coloresDisponibles.length > 0 && (
+          <div className="detalle-bloque-talles" style={{ marginBottom: '20px' }}>
+            <p className="talle-label">COLOR: <span>{(colorElegido || '').toUpperCase()}</span></p>
+            <div className="grilla-botones-talle">
+              {coloresDisponibles.map(col => {
+                const tieneStockColor = producto.variants?.some(v => {
+                  const { color } = parsearOpcionesVariante(v);
+                  return color === col && (v.stock ?? 0) > 0;
+                });
+
+                return (
+                  <button 
+                    key={col}
+                    disabled={!tieneStockColor}
+                    className={`btn-talle-cuadrado ${(colorElegido || '').toUpperCase() === col.toUpperCase() ? 'activo' : ''} ${!tieneStockColor ? 'sin-stock' : ''}`}
+                    onClick={() => handleCambiarColor(col)}
+                    style={{ padding: '0 16px', width: 'auto', minWidth: '60px' }}
+                  >
+                    {col}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* BLOQUE SELECTOR DE TALLE */}
         <div className="detalle-bloque-talles">
           <p className="talle-label">TALLE: <span>{(talleElegido || '').toUpperCase()}</span></p>
           <div className="grilla-botones-talle">
             {tallesDisponibles.map(t => {
               const vReal = producto.variants?.find(variant => {
-                const talleVar = obtenerTalleDeVariante(variant);
-                return talleVar === t.toUpperCase();
+                const { talle, color } = parsearOpcionesVariante(variant);
+                const coincideColor = colorElegido ? color === colorElegido : true;
+                return talle === t.toUpperCase() && coincideColor;
               });
               const sinStock = vReal ? (vReal.stock ?? 0) === 0 : true;
               
