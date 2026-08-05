@@ -1,6 +1,9 @@
 // src/services/tiendanube.ts
 
 const STORE_ID = '3180620';
+// URL base oficial de la API de Tiendanube
+const BASE_URL = 'https://api.tiendanube.com/v1';
+
 // Tu token actual intacto, seguro y sin tocar
 const ACCESS_TOKEN = '2ba64b9dcf174e0a62f9536806421c518b112558'; 
 
@@ -36,8 +39,7 @@ export interface CuponDescuento {
 
 export const obtenerProductos = async (): Promise<TiendanubeProducto[]> => {
   try {
-    // 🚀 ACTUALIZACIÓN: Se agrega ?per_page=200 para destrabar el límite por defecto y traer todas las prendas nuevas
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/products?per_page=200`, {
+    const response = await fetch(`${BASE_URL}/${STORE_ID}/products?per_page=200`, {
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
@@ -99,7 +101,7 @@ export const calcularEnvioReal = async (codigoPostal: string, carrito: any[]): P
       };
     }).filter(item => !isNaN(item.variant_id) && item.variant_id > 0);
 
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/shipping_rates`, {
+    const response = await fetch(`${BASE_URL}/${STORE_ID}/shipping_rates`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -142,7 +144,7 @@ export const validarCuponTiendanube = async (codigoCupon: string): Promise<Cupon
   };
 
   try {
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/coupons`, {
+    const response = await fetch(`${BASE_URL}/${STORE_ID}/coupons`, {
       method: 'GET',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -218,7 +220,6 @@ export const crearOrdenTiendanube = async (
         country: 'AR',
         zipcode: '5500'
       },
-      // 💻 SE PONE EN PENDING (PENDIENTE/AMARILLO) SI ES TARJETA PARA REVISIÓN HASTA QUE SE PAGUE
       payment_status: metodoPago === 'tarjeta' ? 'pending' : 'paid',
       shipping_status: 'unshipped',
       line_items: lineItemsPayload,
@@ -226,7 +227,7 @@ export const crearOrdenTiendanube = async (
       note: `Pedido Web Aspen. Pago: ${metodoPago.toUpperCase()}.${datosTarjeta ? ` Tarjeta: ${datosTarjeta.marca} * * * * ${datosTarjeta.ultimosCuatro}` : ''}`
     };
 
-    const response = await fetch(`/api-tiendanube/v1/${STORE_ID}/orders`, {
+    const response = await fetch(`${BASE_URL}/${STORE_ID}/orders`, {
       method: 'POST',
       headers: {
         'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -241,11 +242,10 @@ export const crearOrdenTiendanube = async (
       const orderId = ordenCreada.id;
       console.log(`[Aspen] ¡COMPRA CREADA CON ÉXITO EN EL PANEL! ID: ${orderId}`);
 
-      // BUCLE DE STOCK ORIGINAL - INTACTO Y PRESERVADO
       for (const item of lineItemsPayload) {
         if (item.product_id && item.variant_id) {
           try {
-            const varRes = await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
+            const varRes = await fetch(`${BASE_URL}/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
               headers: { 
                 'Authentication': `bearer ${ACCESS_TOKEN}`,
                 'User-Agent': 'Aspen (aspenn.mdz@gmail.com)'
@@ -257,7 +257,7 @@ export const crearOrdenTiendanube = async (
               const stockActual = varianteData.stock !== null ? Number(varianteData.stock) : 0;
               const nuevoStock = Math.max(0, stockActual - item.quantity);
 
-              await fetch(`/api-tiendanube/v1/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
+              await fetch(`${BASE_URL}/${STORE_ID}/products/${item.product_id}/variants/${item.variant_id}`, {
                 method: 'PUT',
                 headers: {
                   'Authentication': `bearer ${ACCESS_TOKEN}`,
@@ -274,7 +274,6 @@ export const crearOrdenTiendanube = async (
         }
       }
 
-      // 🚀 RETORNA "SUCCESS" PARA DELEGAR LA REDIRECCIÓN AL FRONTEND SIN TRARE EL LINK VIEJO
       return "SUCCESS";
     } else {
       const errorText = await response.text();
@@ -311,11 +310,10 @@ export const generarLinkMercadoPago = async (carrito: MPItem[]): Promise<string 
     const bodyData = {
       items: itemsPayload,
       payment_methods: {
-        installments: 3, // LIMITA EL CHECKOUT A UN MÁXIMO DE 3 CUOTAS
+        installments: 3,
         default_installments: 1
       },
       back_urls: {
-        // Ponemos tu dominio oficial en vez de localhost
         success: "https://aspenclothing.com.ar/compra-exitosa",
         failure: "https://aspenclothing.com.ar/compra-cancelada",
         pending: "https://aspenclothing.com.ar/compra-pendiente"
