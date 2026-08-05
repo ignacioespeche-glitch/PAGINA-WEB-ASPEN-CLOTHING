@@ -2,7 +2,7 @@
 
 const STORE_ID = '3180620';
 // Proxy directo para bypass de CORS sin depender de rutas locales del Worker
-const BASE_URL = 'https://api.tiendanube.com/v1';
+const BASE_URL = 'https://corsproxy.io/?https://api.tiendanube.com/v1';
 
 // Tu token actual intacto, seguro y sin tocar
 const ACCESS_TOKEN = '2ba64b9dcf174e0a62f9536806421c518b112558'; 
