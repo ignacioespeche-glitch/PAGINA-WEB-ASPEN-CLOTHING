@@ -3,6 +3,7 @@ export async function onRequest(context) {
   const targetPath = url.pathname.replace(/^\/api-tiendanube/, '');
   const targetUrl = `https://api.tiendanube.com${targetPath}${url.search}`;
 
+  // Clonar encabezados y forzar el Host
   const modifiedHeaders = new Headers(context.request.headers);
   modifiedHeaders.set('Host', 'api.tiendanube.com');
 
