@@ -23,28 +23,29 @@ export const Home = () => {
   const obtenerGrillaPorCategoria = (nombreCategoria: string): ProductoGrilla[] => {
     const categoryUpper = nombreCategoria.toUpperCase().trim();
     const subcategoryHome = `${categoryUpper} HOME`;
-    
-    // 1. Buscamos primero de forma estricta los productos asignados a la subcategoría HOME (ej: SUPERIOR HOME)
-    let destacados = productos.filter(p => 
-      p.categories?.some(cat => {
+
+    // Palabras clave para incluir camperas, abrigos y variedad en la sección SUPERIOR
+    const palabrasClaveSuperior = ['SUPERIOR', 'CAMPERA', 'CAMPERAS', 'ABRIGO', 'ABRIGOS', 'JACKET', 'BUZO', 'REMERA'];
+
+    let destacados = productos.filter(p => {
+      return p.categories?.some(cat => {
         const catName = cat.name?.es?.toUpperCase().trim() || '';
-        return catName === subcategoryHome;
-      })
-    );
 
-    // 2. Si no hay suficientes específicos del HOME, rellenamos con los de la categoría general (ej: SUPERIOR)
-    if (destacados.length < 4) {
-      const deRespaldo = productos.filter(p => 
-        p.categories?.some(cat => cat.name?.es?.toUpperCase().trim() === categoryUpper) &&
-        !destacados.some(d => d.id === p.id) // Evita duplicar si ya estaba
-      );
-      destacados = [...destacados, ...deRespaldo];
-    }
+        if (categoryUpper === 'SUPERIOR') {
+          return catName === subcategoryHome || palabrasClaveSuperior.some(pClave => catName.includes(pClave));
+        }
 
-    // 🔒 VALVIÓ EL CANDADO: Toma estrictamente las primeras 4 prendas para congelar la estructura visual
+        return catName === subcategoryHome || catName === categoryUpper || catName.includes(categoryUpper);
+      });
+    });
+
+    // Invertimos la lista para que las camperas o productos subidos recientemente aparezcan primero
+    destacados = [...destacados].reverse();
+
+    // Toma estrictamente los primeros 4 elementos para congelar la grilla visual
     const items: ProductoGrilla[] = destacados.slice(0, 4).map(p => ({ ...p, esVacio: false }));
     
-    // Mantiene los espacios vacíos estéticos si hay menos de 4 artículos
+    // Mantiene espacios vacíos estéticos si hay menos de 4 artículos
     while (items.length < 4) {
       items.push({ 
         id: `vacio-${nombreCategoria}-${items.length}`, 

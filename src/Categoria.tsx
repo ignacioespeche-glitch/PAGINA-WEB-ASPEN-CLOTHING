@@ -31,10 +31,22 @@ export const Categoria = ({ titulo, busqueda }: Props) => {
     const nombreProducto = producto.name?.es || '';
     const categoriaPagina = titulo.toUpperCase().trim();
 
+    // Palabras clave asociadas a prendas de la sección SUPERIOR
+    const palabrasClaveSuperior = ['SUPERIOR', 'CAMPERA', 'CAMPERAS', 'ABRIGO', 'ABRIGOS', 'JACKET', 'BUZO', 'REMERA'];
+
     if (categoriaPagina !== "RESULTADOS DE BÚSQUEDA") {
       const perteneceACategoria = producto.categories?.some(cat => {
         const nombreCatReal = cat.name?.es?.toUpperCase().trim() || '';
-        return nombreCatReal === categoriaPagina || nombreCatReal === `${categoriaPagina} HOME`;
+
+        if (categoriaPagina === 'SUPERIOR') {
+          return nombreCatReal === 'SUPERIOR' || 
+                 nombreCatReal === 'SUPERIOR HOME' || 
+                 palabrasClaveSuperior.some(pClave => nombreCatReal.includes(pClave));
+        }
+
+        return nombreCatReal === categoriaPagina || 
+               nombreCatReal === `${categoriaPagina} HOME` || 
+               nombreCatReal.includes(categoriaPagina);
       });
 
       if (!perteneceACategoria) return false;
@@ -143,7 +155,6 @@ export const Categoria = ({ titulo, busqueda }: Props) => {
                 )}
               </div>
 
-              {/* Agregamos el desglose completo estilo Moscú */}
               <div className="info-prenda-detalles" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 0' }}>
                 <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   {producto.name?.es}
